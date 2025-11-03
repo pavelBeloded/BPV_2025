@@ -5,7 +5,7 @@
 #define LEXEMA_FIXSIZE 1
 #define LT_MAXSIZE 4096 //4096
 #define LT_TI_NULLIDX 0xfffffff
-#define LEX_STRING 's'
+#define LEX_STRING 't'
 #define LEX_INTEGER 't'
 #define LEX_ID 'i'
 #define LEX_LITERAL 'l'
@@ -52,6 +52,11 @@ namespace LT {
 		char lexema;
 		int sn; //номер строки в исходном тексте
 		int idxTI; //индекс в таблице идентификаторов 
+
+		/*Entry(char lexema, int sn) {
+			this->lexema = lexema;
+			this->sn = sn;
+		}*/
 	};
 	struct LexTable
 	{
@@ -66,6 +71,4 @@ namespace LT {
 	void Delete(LexTable& lextable);
 	void FillLTIT(LexTable& lextable, IT::IdTable& idtable, In::IN& in);
 	bool isId(const std::string& word);
-	bool isLiteral(const std::string word);
-	char checkForKeyword(const std::string word);
 }

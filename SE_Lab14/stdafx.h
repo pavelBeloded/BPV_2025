@@ -6,5 +6,6 @@
 #include "Out.h"
 #include "LT.h"
 #include "IT.h"
-
+#include "GRB.h"
+#include "MFST.h"
 #include "RemoveSpaces.h"

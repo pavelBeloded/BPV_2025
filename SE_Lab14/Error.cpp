@@ -23,7 +23,7 @@ namespace Error {
 		ERROR_ENTRY(110, "Ошибка при открытии файла с исходным кодом (-in)"),
 		ERROR_ENTRY(111, "Недопустимый символ в исходном файле (-in)"),
 		ERROR_ENTRY(112, "Ошибка при создании файла протокола (-log)"),
-		ERROR_ENTRY(113, "Ошибка при создании выходного файла"), 
+		ERROR_ENTRY(113, "Ошибка при создании выходного файла"),
 		ERROR_ENTRY(114, "Идентификатор не определен"),
 		ERROR_ENTRY_NODEF(115), ERROR_ENTRY_NODEF(116), ERROR_ENTRY_NODEF(117), ERROR_ENTRY_NODEF(118), ERROR_ENTRY_NODEF(119),
 		ERROR_ENTRY_NODEF10(120), ERROR_ENTRY_NODEF10(130), ERROR_ENTRY_NODEF10(140), ERROR_ENTRY_NODEF10(150), ERROR_ENTRY_NODEF10(160), ERROR_ENTRY_NODEF10(170),ERROR_ENTRY_NODEF10(180),ERROR_ENTRY_NODEF10(190),
@@ -32,9 +32,9 @@ namespace Error {
 		ERROR_ENTRY(202, "Идентификатор не найден в таблице"),
 		ERROR_ENTRY(203, "Неверная запись идентификатора (например, слишком длинный строковый литерал)"),
 		ERROR_ENTRY(204, "Превышен максимальный размер таблицы иденификаторов"),
-		ERROR_ENTRY(205, "Недопустимый (нулевой или отрицательный) размер для таблицы идентификаторов"), 
-		ERROR_ENTRY(206, "Ошибка создания таблицы идентификаторов (не удалось выделить память)"),        
-		ERROR_ENTRY(207, "Попытка добавить пустой или некорректный идентификатор"),                      
+		ERROR_ENTRY(205, "Недопустимый (нулевой или отрицательный) размер для таблицы идентификаторов"),
+		ERROR_ENTRY(206, "Ошибка создания таблицы идентификаторов (не удалось выделить память)"),
+		ERROR_ENTRY(207, "Попытка добавить пустой или некорректный идентификатор"),
 		ERROR_ENTRY_NODEF(208),
 		ERROR_ENTRY_NODEF(209),
 
@@ -53,7 +53,16 @@ namespace Error {
 		ERROR_ENTRY_NODEF10(240), ERROR_ENTRY_NODEF10(250), ERROR_ENTRY_NODEF10(260),
 		ERROR_ENTRY_NODEF10(270), ERROR_ENTRY_NODEF10(280), ERROR_ENTRY_NODEF10(290),
 		ERROR_ENTRY_NODEF100(300),ERROR_ENTRY_NODEF100(400),ERROR_ENTRY_NODEF100(500),
-		ERROR_ENTRY_NODEF100(600),ERROR_ENTRY_NODEF100(700),ERROR_ENTRY_NODEF100(800),
+
+		ERROR_ENTRY(600, "Неверная структура программы"),
+		ERROR_ENTRY(601, "Ошибочный оператор"),
+		ERROR_ENTRY(602, "Ошибка в выражении"),
+		ERROR_ENTRY(603, "Ошибка в параметрах функции"),
+		ERROR_ENTRY(604, "Ошибка в параметрах вызываемой функции"),
+		ERROR_ENTRY_NODEF(605),ERROR_ENTRY_NODEF(606),ERROR_ENTRY_NODEF(607),ERROR_ENTRY_NODEF(608),ERROR_ENTRY_NODEF(609),ERROR_ENTRY_NODEF10(610),ERROR_ENTRY_NODEF10(620),ERROR_ENTRY_NODEF10(630),ERROR_ENTRY_NODEF10(640)
+		,ERROR_ENTRY_NODEF10(650),ERROR_ENTRY_NODEF10(660),ERROR_ENTRY_NODEF10(670),ERROR_ENTRY_NODEF10(680)
+		,ERROR_ENTRY_NODEF10(690),
+		ERROR_ENTRY_NODEF100(700),ERROR_ENTRY_NODEF100(800),
 		ERROR_ENTRY_NODEF100(900)
 
 	};
