@@ -20,10 +20,10 @@
 #define LEX_BRACELET '}'
 #define LEX_LEFTHESIS '('
 #define LEX_RIGHTHESIS ')'
-#define LEX_PLUS 'v'
-#define LEX_MINUS 'v'
-#define LEX_STAR 'v'
-#define LEX_DIRSLASH 'v'
+#define LEX_PLUS '+'
+#define LEX_MINUS '-'
+#define LEX_STAR '*'
+#define LEX_DIRSLASH '/'
 #define LEX_EQUAL '='
 #define KEYWORD_MAX_LEN 10
 

@@ -134,6 +134,8 @@
 #include <iostream>
 #include <cwchar>
 #include "stdafx.h"
+#include "Polish.h"
+
 int wmain(int argc, wchar_t* argv[]) {
     setlocale(LC_ALL, "Ru");
     Log::LOG log;
@@ -155,14 +157,23 @@ int wmain(int argc, wchar_t* argv[]) {
         Log::WriteLT(log, lextable);
         Log::WriteIT(log, idtable);
         
-        /*int sn = lextable.table[lextable.size - 1].sn;
-        LT::Add(lextable, {'$', ++sn, LT_TI_NULLIDX });*/
-        MFST_TRACE_START;
+      /*  MFST_TRACE_START;
         MFST::Mfst mfst(lextable, GRB::getGreibach());
         mfst.start();
 
         mfst.savededucation();
-        mfst.printrules();
+        mfst.printrules();*/
+
+        bool polish_ok = true;
+        for (int i = 0; i < lextable.size; i++) {
+            if (lextable.table[i].lexema == LEX_EQUAL) {
+                if (!Polish::PolishNotation(i + 1, lextable, idtable)) {
+                    polish_ok = false;
+                }
+            }
+        }
+
+        Log::WriteLT(log, lextable);
 
         Out::WriteIn(out, in);
     }

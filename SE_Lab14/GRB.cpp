@@ -57,20 +57,17 @@ namespace GRB {
 		),
 
 		Rule(NS('M'), GRB_ERROR_SERIES + 2,
-		2,		//M →		vE	|	vEM
-			Rule::Chain(2, TS('v'), NS('E')),
-			Rule::Chain(3, TS('v'), NS('E'), NS('M'))
+			8, 
+			Rule::Chain(2, TS('+'), NS('E')),
+			Rule::Chain(3, TS('+'), NS('E'), NS('M')),
+			Rule::Chain(2, TS('-'), NS('E')),
+			Rule::Chain(3, TS('-'), NS('E'), NS('M')),
+			Rule::Chain(2, TS('*'), NS('E')),
+			Rule::Chain(3, TS('*'), NS('E'), NS('M')),
+			Rule::Chain(2, TS('/'), NS('E')),
+			Rule::Chain(3, TS('/'), NS('E'), NS('M'))
 		)
 		});
-
-	/*Rule::Chain::Chain(short psize, GRBALPHABET s, ...)
-	{
-		this->nt = new GRBALPHABET[this->size = psize];
-
-		int* ptr = (int*)&s;
-		for (int i = 0; i < psize; i++)
-			this->nt[i] = (short)ptr[i];
-	}*/
 
 	Rule::Chain::Chain(short psize, GRBALPHABET s, ...) {
 		this->size = psize;

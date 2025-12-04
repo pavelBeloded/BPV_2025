@@ -143,6 +143,7 @@
     <ClCompile Include="MFST.cpp" />
     <ClCompile Include="Out.cpp" />
     <ClCompile Include="Parm.cpp" />
+    <ClCompile Include="Polish.cpp" />
     <ClCompile Include="RemoveSpaces.cpp" />
     <ClCompile Include="SE_Lab14.cpp" />
   </ItemGroup>
@@ -157,6 +158,7 @@
     <ClInclude Include="MFST.h" />
     <ClInclude Include="Out.h" />
     <ClInclude Include="Parm.h" />
+    <ClInclude Include="Polish.h" />
     <ClInclude Include="RemoveSpaces.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
