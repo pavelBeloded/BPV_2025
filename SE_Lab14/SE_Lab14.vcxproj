@@ -145,6 +145,7 @@
     <ClCompile Include="Parm.cpp" />
     <ClCompile Include="Polish.cpp" />
     <ClCompile Include="RemoveSpaces.cpp" />
+    <ClCompile Include="Semantics.cpp" />
     <ClCompile Include="SE_Lab14.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -160,6 +161,7 @@
     <ClInclude Include="Parm.h" />
     <ClInclude Include="Polish.h" />
     <ClInclude Include="RemoveSpaces.h" />
+    <ClInclude Include="Semantics.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>

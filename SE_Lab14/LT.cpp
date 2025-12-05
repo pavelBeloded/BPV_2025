@@ -173,7 +173,14 @@ namespace LT {
 		for (int i = 0; i < in.size; ++i) {
 			unsigned char c = in.text[i];
 			unsigned char next_c = (i + 1 < in.size) ? in.text[i + 1] : 0;
-
+			if (c == '/' && next_c == '/') {
+				while (i < in.size && in.text[i] != '\n') {
+					i++;
+				}
+				processWord();
+				line++;
+				continue;
+			}
 			if (isInsideString) {
 				word += c;
 				if (c == '\'') {

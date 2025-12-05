@@ -29,6 +29,7 @@ namespace Log {
 		va_start(args, c);
 
 		const char* current_str = c;
+		// ВАЖНО: Цикл идет, пока не встретит nullptr
 		while (current_str != nullptr) {
 			*log.stream << current_str;
 			current_str = va_arg(args, const char*);
@@ -45,34 +46,27 @@ namespace Log {
 		va_start(args, c);
 
 		wchar_t* wstr = c;
-
 		while (wstr != nullptr && wstr[0] != L'\0') {
 			size_t requiredSize = wcslen(wstr) * 4 + 1;
 			char* buffer = new char[requiredSize];
 			size_t convertedLength = 0;
-
 			errno_t err = wcstombs_s(&convertedLength, buffer, requiredSize, wstr, _TRUNCATE);
-
-			if (err == 0) {
-				(*log.stream) << buffer;
-			}
-
+			if (err == 0) (*log.stream) << buffer;
 			delete[] buffer;
 			wstr = va_arg(args, wchar_t*);
 		}
-
 		va_end(args);
 		(*log.stream) << std::endl;
 	}
 
 	void WriteLog(LOG log) {
+		if (!log.stream || !log.stream->is_open()) return;
 		time_t now = time(nullptr);
 		struct tm localTime;
 		localtime_s(&localTime, &now);
 		char timeBuffer[100];
 		strftime(timeBuffer, sizeof(timeBuffer), "%Y-%m-%d %H:%M:%S", &localTime);
 		*log.stream << "-----  Протокол ----- " << timeBuffer << "------\n";
-		return;
 	}
 
 	void WriteParm(LOG log, Parm::PARM parm) {
@@ -83,7 +77,7 @@ namespace Log {
 			std::memset(buffer, 0, sizeof(buffer));
 			size_t converted = 0;
 			errno_t err = wcstombs_s(&converted, buffer, sizeof(buffer), src, _TRUNCATE);
-			return (err == 0) ? buffer : "[ошибка преобразования]";
+			return (err == 0) ? buffer : "[ошибка]";
 			};
 		*log.stream << "-log: " << convert(parm.log) << std::endl;
 		*log.stream << "-in : " << convert(parm.in) << std::endl;
@@ -91,11 +85,11 @@ namespace Log {
 	}
 
 	void WriteIn(LOG log, In::IN in) {
+		if (!log.stream || !log.stream->is_open()) return;
 		*log.stream << "---- Статистика -----" << std::endl;
 		*log.stream << "Количество символов: " << in.size << std::endl;
 		*log.stream << "Проигнорировано: " << in.ignore << std::endl;
 		*log.stream << "Количество строк: " << in.lines << std::endl;
-		return;
 	}
 
 	void WriteError(LOG log, Error::ERROR error) {
@@ -116,45 +110,21 @@ namespace Log {
 	}
 
 	void WriteIT(LOG log, IT::IdTable& idtable) {
+		if (!log.stream || !log.stream->is_open()) return; // ДОБАВЛЕНА ПРОВЕРКА
 		outfile << "---- Таблица идентификаторов ----" << std::endl;
-		outfile << std::left
-			<< std::setw(4) << "№" << "|"
-			<< std::setw(7) << "ID" << "|"
-			<< std::setw(7) << "Type" << "|"
-			<< std::setw(10) << "DataType" << "|"
-			<< std::setw(11) << "IdxFirstLE" << "|"
-			<< "Value"
-			<< std::endl;
+		outfile << std::left << std::setw(4) << "No" << "|" << std::setw(15) << "ID" << "|" << std::setw(7) << "Type" << "|" << std::setw(10) << "DataType" << "|" << std::setw(11) << "Idx" << "|" << "Value" << std::endl;
 		outfile << std::setfill('-') << std::setw(60) << "-" << std::setfill(' ') << std::endl;
 		for (int i = 0; i < idtable.size; i++) {
 			IT::Entry entry = idtable.table[i];
 			std::string typeStr;
-			switch (entry.idtype) {
-			case IT::V: typeStr = "Var"; break;
-			case IT::F: typeStr = "Func"; break;
-			case IT::P: typeStr = "Param"; break;
-			case IT::L: typeStr = "Lit"; break;
-			default: typeStr = "?"; break;
-			}
-			std::string dataStr;
-			switch (entry.iddatatype) {
-			case IT::INT: dataStr = "integer"; break;
-			case IT::STR: dataStr = "string"; break;
-			case IT::UNKNOWN: dataStr = "unknown"; break;
-			default: dataStr = "?"; break;
-			}
-			outfile << std::setw(3) << i << " |"
-				<< std::setw(7) << entry.id << "|"
-				<< std::setw(7) << typeStr << "|"
-				<< std::setw(10) << dataStr << "|"
-				<< std::setw(11) << entry.idxfirstLE << "|";
+			switch (entry.idtype) { case IT::V: typeStr = "Var"; break; case IT::F: typeStr = "Func"; break; case IT::P: typeStr = "Param"; break; case IT::L: typeStr = "Lit"; break; default: typeStr = "?"; break; }
+											  std::string dataStr;
+			switch (entry.iddatatype) { case IT::INT: dataStr = "uint"; break; case IT::STR: dataStr = "text"; break; default: dataStr = "?"; break; }
+
+			outfile << std::setw(3) << i << " |" << std::setw(15) << entry.id << "|" << std::setw(7) << typeStr << "|" << std::setw(10) << dataStr << "|" << std::setw(11) << entry.idxfirstLE << "|";
 			if (entry.idtype == IT::L) {
-				if (entry.iddatatype == IT::INT) {
-					outfile << entry.value.vint;
-				}
-				else if (entry.iddatatype == IT::STR) {
-					outfile << "'" << entry.value.vstr.str << "'";
-				}
+			if (entry.iddatatype == IT::INT) outfile << entry.value.vint;
+			else if (entry.iddatatype == IT::STR) outfile << "'" << entry.value.vstr.str << "'";
 			}
 			outfile << std::endl;
 		}
@@ -162,6 +132,7 @@ namespace Log {
 	}
 
 	void WriteLT(LOG log, LT::LexTable& lextable) {
+		if (!log.stream || !log.stream->is_open()) return; // ДОБАВЛЕНА ПРОВЕРКА
 		outfile << "---- Таблица лексем ----" << std::endl;
 		int size = lextable.size;
 		int lastLine = -1;

@@ -9,3 +9,5 @@
 #include "GRB.h"
 #include "MFST.h"
 #include "RemoveSpaces.h"
+#include "Polish.h"
+#include "Semantics.h" 

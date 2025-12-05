@@ -3,5 +3,5 @@
 #include "IT.h"
 
 namespace Polish {
-	bool PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtable);
+	int PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtable);
 }
