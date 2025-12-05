@@ -157,16 +157,16 @@ int wmain(int argc, wchar_t* argv[]) {
         Log::WriteLT(log, lextable);
         Log::WriteIT(log, idtable);
         
-      /*  MFST_TRACE_START;
+        MFST_TRACE_START;
         MFST::Mfst mfst(lextable, GRB::getGreibach());
         mfst.start();
 
         mfst.savededucation();
-        mfst.printrules();*/
+        mfst.printrules();
 
         bool polish_ok = true;
         for (int i = 0; i < lextable.size; i++) {
-            if (lextable.table[i].lexema == LEX_EQUAL) {
+            if (lextable.table[i].lexema == LEX_ASSIGN) {
                 if (!Polish::PolishNotation(i + 1, lextable, idtable)) {
                     polish_ok = false;
                 }

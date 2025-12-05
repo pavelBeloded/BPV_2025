@@ -1,108 +1,111 @@
------  Протокол ----- 2025-12-04 23:29:11------
+-----  Протокол ----- 2025-12-05 23:58:30------
 ----- Параметры -----
 -log: logs.log.txt
 -in : in.txt
 -out: out.out.txt
 ---- Статистика -----
-Количество символов: 591
-Проигнорировано: 36
-Количество строк: 36
+Количество символов: 653
+Проигнорировано: 48
+Количество строк: 48
 ---- Таблица лексем ----
-001 tfi(ti,ti)
-002 {
-003 dti;
-004 dti;
-005 i=i*(i+i);
-006 ri;
-007 };
-008 tfi(ti,ti)
-009 {
-010 dti;
-011 dtfi(ti,ti,
-012 ti);
-013 i=i(i,l,l)+i;
-014 ri;
-015 };
-016 m
-017 {
-018 dti;
-019 dti;
-020 dti;
-021 dti;
-022 dti;
-023 dti;
-024 dtfi(ti);
-025 i=l;
-026 i=l;
-027 i=l;
-028 i=l;
+001 tfi(ti,ti){
+002 dti;
+003 i=(i+i)*l;
+004 ri;
+005 };
+007 tfi(){
+008 rl;
+009 };
+011 m{
+012 dti;
+013 dti;
+014 dti;
+015 dti;
+017 i=l;
+018 i=l;
+019 i=l;
+021 pi;
+023 i=i+i;
+024 i=i-l;
+025 i=i*l;
+026 i=i/l;
+027 i=i%l;
 029 i=i(i,i);
-030 i=i(i,i);
-031 pl;
+031 i=i();
 032 pi;
 033 pi;
-034 pi(i);
-035 rl;
-036 };
+035 w(i2i){
+036 dti;
+038 i=iei;
+039 i=inl;
+040 i=i<l;
+041 i=i>l;
+042 i=i1l;
+044 i=i-l;
+045 pi;
+046 };
+048 rl;
+049 };
 ---- Таблица идентификаторов ----
 №000|ID00000|Type000|DataType00|IdxFirstLE0|Value
 ------------------------------------------------------------
-0   |fi     |Func   |string    |1          |
-1   |x      |Param  |string    |1          |
-2   |y      |Param  |string    |1          |
-3   |z      |Var    |string    |3          |
-4   |fs     |Func   |string    |8          |
-5   |a      |Param  |string    |8          |
-6   |b      |Param  |string    |8          |
-7   |c      |Var    |string    |10         |
-8   |subst  |Func   |string    |11         |
-9   |p      |Param  |string    |11         |
-10  |n      |Param  |string    |12         |
-11  |L11    |Lit    |integer   |13         |1
-12  |L12    |Lit    |integer   |13         |3
-13  |sa     |Var    |string    |21         |
-14  |sb     |Var    |string    |22         |
-15  |sc     |Var    |string    |23         |
-16  |strle  |Func   |string    |24         |
-17  |L17    |Lit    |integer   |26         |5
-18  |L18    |Lit    |string    |27         |'1234567890'
-19  |L19    |Lit    |string    |31         |'контрольный пример'
-20  |L20    |Lit    |integer   |35         |0
+0   |compu  |Func   |integer   |1          |
+1   |a      |Param  |integer   |1          |
+2   |b      |Param  |integer   |1          |
+3   |res    |Var    |integer   |2          |
+4   |L4     |Lit    |integer   |3          |2
+5   |getpr  |Func   |string    |7          |
+6   |L6     |Lit    |string    |8          |'Val: '
+7   |x      |Var    |integer   |12         |
+8   |y      |Var    |integer   |13         |
+9   |z      |Var    |integer   |14         |
+10  |s      |Var    |string    |15         |
+11  |L11    |Lit    |integer   |17         |10
+12  |L12    |Lit    |integer   |18         |5
+13  |L13    |Lit    |string    |19         |'Start'
+14  |L14    |Lit    |integer   |25         |3
+15  |temp   |Var    |integer   |36         |
+16  |L16    |Lit    |integer   |39         |0
+17  |L17    |Lit    |integer   |40         |100
+18  |L18    |Lit    |integer   |42         |50
+19  |L19    |Lit    |integer   |44         |1
 
 ---- Таблица лексем ----
-100 tfi(ti,ti)
-200 {
-300 dti;
-400 dti;
-500 i=iii+*##;
-600 ri;
-700 };
-800 tfi(ti,ti)
-900 {
-100 dti;
-110 dtfi(ti,ti,
-120 ti);
-130 i=illii+####;
-140 ri;
-150 };
-160 m
-170 {
-180 dti;
-190 dti;
+100 tfi(ti,ti){
 200 dti;
-210 dti;
-220 dti;
-230 dti;
-240 dtfi(ti);
-250 i=l;
-260 i=l;
-270 i=l;
-280 i=l;
+300 i=ii+l*##;
+400 ri;
+500 };
+700 tfi(){
+800 rl;
+900 };
+110 m{
+120 dti;
+130 dti;
+140 dti;
+150 dti;
+170 i=l;
+180 i=l;
+190 i=l;
+210 pi;
+230 i=ii+;
+240 i=il-;
+250 i=il*;
+260 i=il/;
+270 i=il#;
 290 i=iii###;
-300 i=iii###;
-310 pl;
+310 i=i##;
 320 pi;
 330 pi;
-340 pi(i);
-350 rl;
-360 };
+350 w(i2i){
+360 dti;
+380 i=ii#;
+390 i=il#;
+400 i=il#;
+410 i=il#;
+420 i=il#;
+440 i=il-;
+450 pi;
+460 };
+480 rl;
+490 };

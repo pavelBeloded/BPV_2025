@@ -8,65 +8,108 @@ namespace GRB {
 
 	Greibach greibach(NS('S'), TS('$'),
 		{
-		  Rule(NS('S'), GRB_ERROR_SERIES + 0,
-			5,		//S →	m{NrE;};	|	tfi(F){NrE;};S	|	m{NrE;};S	|	tfi(F){NrE;}; | i{NrE;}
+			// S - Стартовое правило
+			// Теперь здесь 6 цепочек, покрывающих все случаи
+			Rule(NS('S'), GRB_ERROR_SERIES + 0,
+			6,
+			// 1. entry { N ret E ; } ;  (Точка входа с телом)
 			Rule::Chain(8, TS('m'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';')),
-			Rule::Chain(8, TS('i'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';')),
+
+			// 2. entry { ret E ; } ;    (Точка входа БЕЗ тела, сразу возврат)
+			Rule::Chain(7, TS('m'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';')),
+
+			// 3. proc func(F) { N ret E; }; S  (Функция с ПАРАМЕТРАМИ и ТЕЛОМ)
 			Rule::Chain(14, TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
-			Rule::Chain(9, TS('m'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
-			Rule::Chain(13, TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'))
-		  ),Rule(NS('N'), GRB_ERROR_SERIES + 1,
-		 10,		//N	→	dti; | rE; | i = E; | dtfi(F); | dti;N | rE;N | i=E;N | dtfi(F);N | pE; | pE;N
-			Rule::Chain(4, TS('d'), TS('t'), TS('i'), TS(';')),
-			Rule::Chain(4, TS('i'), TS('='), NS('E'), TS(';')),
-			Rule::Chain(3, TS('r'), NS('E'), TS(';')),
-			Rule::Chain(8, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';')),
-			Rule::Chain(5, TS('d'), TS('t'), TS('i'), TS(';'), NS('N')),
-			Rule::Chain(4, TS('r'), NS('E'), TS(';'), NS('N')),
-			Rule::Chain(5, TS('i'), TS('='), NS('E'), TS(';'), NS('N')),
-			Rule::Chain(9, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';'), NS('N')),
-			Rule::Chain(3, TS('p'), NS('E'), TS(';')),
-			Rule::Chain(4, TS('p'), NS('E'), TS(';'), NS('N'))
+
+			// 4. proc func(F) { ret E; }; S    (Функция с ПАРАМЕТРАМИ, но БЕЗ ТЕЛА)
+			Rule::Chain(13, TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
+
+			// 5. proc func() { N ret E; }; S   (Функция БЕЗ ПАРАМЕТРОВ, с ТЕЛОМ)
+			Rule::Chain(13, TS('t'), TS('f'), TS('i'), TS('('), TS(')'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
+
+			// 6. proc func() { ret E; }; S     (Функция БЕЗ ПАРАМЕТРОВ и БЕЗ ТЕЛА)
+			Rule::Chain(12, TS('t'), TS('f'), TS('i'), TS('('), TS(')'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S'))
 		),
 
-		Rule(NS('E'), GRB_ERROR_SERIES + 2,
-		9,		//E →	i	|	l	|	(E)	|	i(W)	|	iM	|	lM	|	(E)M	|	i(W)M|	i()
-			Rule::Chain(1, TS('i')),
-			Rule::Chain(1, TS('l')),
-			Rule::Chain(3, TS('('), NS('E'), TS(')')),
-			Rule::Chain(4, TS('i'), TS('('), NS('W'), TS(')')),
-			Rule::Chain(3, TS('i'), TS('('), TS(')')),
-			Rule::Chain(2, TS('i'), NS('M')),
-			Rule::Chain(2, TS('l'), NS('M')),
-			Rule::Chain(4, TS('('), NS('E'), TS(')'), NS('M')),
-			Rule::Chain(5, TS('i'), TS('('), NS('W'), TS(')'), NS('M'))
-		),
+				// N - Операторы
+				// 14 цепочек: присваивание, объявление, вызов, while, echo
+				Rule(NS('N'), GRB_ERROR_SERIES + 1,
+				14,
+					// --- Одиночные операторы ---
+					Rule::Chain(4, TS('d'), TS('t'), TS('i'), TS(';')),				// var type id;
+					Rule::Chain(4, TS('i'), TS('='), NS('E'), TS(';')),				// id = expr;
+					Rule::Chain(3, TS('r'), NS('E'), TS(';')),						// ret expr;
+					Rule::Chain(3, TS('p'), NS('E'), TS(';')),						// echo expr;
+					Rule::Chain(6, TS('d'), TS('t'), TS('i'), TS('='), NS('E'), TS(';')), // var type id = expr;
 
-		Rule(NS('F'), GRB_ERROR_SERIES + 3,
-		 2,		//F	→	ti	|	ti,F
-			Rule::Chain(2, TS('t'), TS('i')),
-			Rule::Chain(4, TS('t'), TS('i'), TS(','), NS('F'))
-		),
+					// while ( E ) { N };
+					Rule::Chain(8, TS('w'), TS('('), NS('E'), TS(')'), TS('{'), NS('N'), TS('}'), TS(';')),
 
-		Rule(NS('W'), GRB_ERROR_SERIES + 4,
-		 4,		//W	→	i	|	l	|	i,W	|	l,W
-			Rule::Chain(1, TS('i')),
-			Rule::Chain(1, TS('l')),
-			Rule::Chain(3, TS('i'), TS(','), NS('W')),
-			Rule::Chain(3, TS('l'), TS(','), NS('W'))
-		),
+					// declare func (прототипы внутри N, если нужно)
+					Rule::Chain(8, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';')),
 
-		Rule(NS('M'), GRB_ERROR_SERIES + 2,
-			8, 
-			Rule::Chain(2, TS('+'), NS('E')),
-			Rule::Chain(3, TS('+'), NS('E'), NS('M')),
-			Rule::Chain(2, TS('-'), NS('E')),
-			Rule::Chain(3, TS('-'), NS('E'), NS('M')),
-			Rule::Chain(2, TS('*'), NS('E')),
-			Rule::Chain(3, TS('*'), NS('E'), NS('M')),
-			Rule::Chain(2, TS('/'), NS('E')),
-			Rule::Chain(3, TS('/'), NS('E'), NS('M'))
-		)
+					// --- Операторы с продолжением (N) ---
+					Rule::Chain(5, TS('d'), TS('t'), TS('i'), TS(';'), NS('N')),	// var... N
+					Rule::Chain(5, TS('i'), TS('='), NS('E'), TS(';'), NS('N')),	// id=... N
+					Rule::Chain(4, TS('r'), NS('E'), TS(';'), NS('N')),				// ret... N
+					Rule::Chain(4, TS('p'), NS('E'), TS(';'), NS('N')),				// echo... N
+					Rule::Chain(7, TS('d'), TS('t'), TS('i'), TS('='), NS('E'), TS(';'), NS('N')), // init... N
+
+					// while (...) { N }; N
+					Rule::Chain(9, TS('w'), TS('('), NS('E'), TS(')'), TS('{'), NS('N'), TS('}'), TS(';'), NS('N')),
+
+					// declare func... N
+					Rule::Chain(9, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';'), NS('N'))
+				),
+
+				// E - Выражения (9 цепочек)
+				Rule(NS('E'), GRB_ERROR_SERIES + 2,
+				9,
+					Rule::Chain(1, TS('i')),									// id
+					Rule::Chain(1, TS('l')),									// literal
+					Rule::Chain(3, TS('('), NS('E'), TS(')')),					// (E)
+					Rule::Chain(4, TS('i'), TS('('), NS('W'), TS(')')),			// id(args)
+					Rule::Chain(3, TS('i'), TS('('), TS(')')),					// id() -- ВЫЗОВ БЕЗ АРГУМЕНТОВ
+					Rule::Chain(2, TS('i'), NS('M')),							// id + ...
+					Rule::Chain(2, TS('l'), NS('M')),							// literal + ...
+					Rule::Chain(4, TS('('), NS('E'), TS(')'), NS('M')),			// (E) + ...
+					Rule::Chain(5, TS('i'), TS('('), NS('W'), TS(')'), NS('M'))	// id(args) + ...
+				),
+
+				// F - Параметры объявления (2 цепочки)
+				Rule(NS('F'), GRB_ERROR_SERIES + 3,
+				 2,
+					Rule::Chain(2, TS('t'), TS('i')),				// type id
+					Rule::Chain(4, TS('t'), TS('i'), TS(','), NS('F')) // type id, ...
+				),
+
+				// W - Аргументы вызова (4 цепочки)
+				Rule(NS('W'), GRB_ERROR_SERIES + 4,
+				 4,
+					Rule::Chain(1, TS('i')),					// id
+					Rule::Chain(1, TS('l')),					// literal
+					Rule::Chain(3, TS('i'), TS(','), NS('W')),	// id, ...
+					Rule::Chain(3, TS('l'), TS(','), NS('W'))	// literal, ...
+				),
+
+				// M - Хвост выражения (22 цепочки)
+				Rule(NS('M'), GRB_ERROR_SERIES + 2,
+				22,
+					// Арифметика
+					Rule::Chain(2, TS('+'), NS('E')), Rule::Chain(3, TS('+'), NS('E'), NS('M')),
+					Rule::Chain(2, TS('-'), NS('E')), Rule::Chain(3, TS('-'), NS('E'), NS('M')),
+					Rule::Chain(2, TS('*'), NS('E')), Rule::Chain(3, TS('*'), NS('E'), NS('M')),
+					Rule::Chain(2, TS('/'), NS('E')), Rule::Chain(3, TS('/'), NS('E'), NS('M')),
+					Rule::Chain(2, TS('%'), NS('E')), Rule::Chain(3, TS('%'), NS('E'), NS('M')),
+
+					// Сравнения
+					Rule::Chain(2, TS('e'), NS('E')), Rule::Chain(3, TS('e'), NS('E'), NS('M')), // ==
+					Rule::Chain(2, TS('n'), NS('E')), Rule::Chain(3, TS('n'), NS('E'), NS('M')), // !=
+					Rule::Chain(2, TS('<'), NS('E')), Rule::Chain(3, TS('<'), NS('E'), NS('M')), // <
+					Rule::Chain(2, TS('>'), NS('E')), Rule::Chain(3, TS('>'), NS('E'), NS('M')), // >
+					Rule::Chain(2, TS('1'), NS('E')), Rule::Chain(3, TS('1'), NS('E'), NS('M')), // <=
+					Rule::Chain(2, TS('2'), NS('E')), Rule::Chain(3, TS('2'), NS('E'), NS('M'))  // >=
+				)
 		});
 
 	Rule::Chain::Chain(short psize, GRBALPHABET s, ...) {

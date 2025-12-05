@@ -1,36 +1,49 @@
-integer function fi(integer x, integer y)
-{
-declare integer z;
-declare integer z;
-z= x*(x+y);
-return z;
+uint proc compute(uint a, uint b) {
+    var uint res;
+    res = (a + b) * 2;
+    ret res;
 };
-string function fs (string a, string b)
-{
-declare string c;
-declare string function substr(string a, integer p,
- integer n);
-c = substr(a, 1,3)+ b;
-return c;
+
+text proc getprefix() {
+    ret 'Val: ';
 };
-main
-{
-declare integer x;
-declare integer y;
-declare integer z;
-declare string sa;
-declare string sb;
-declare string sc;
-declare integer function strlen(string p);
-x = 1;
-y = 5;
-sa = '1234567890';
-sb = '1234567890';
-z = fi(x,y);
-sc = fs(sa,sb);
-print 'контрольный пример';
-print z;
-print sc;
-print strlen(sc);
-return 0;
+
+entry {
+    var uint x;
+    var uint y;
+    var uint z;
+    var text s;
+
+    x = 012;        
+    y = 5;
+    s = 'Start';
+
+    echo s;
+
+    z = x + y;
+    z = z - 2;
+    z = z * 3;
+    z = z / 2;
+    z = x % 3;      
+
+    z = compute(x, y);
+
+    s = getprefix();
+    echo s;
+    echo z;
+
+    while (x >= y) {
+        var uint temp;
+        
+        temp = x == y;
+        temp = x != 0;
+        temp = x < 100;
+        temp = x > 0;
+        temp = x <= 50;
+
+        x = x - 1;
+        echo x;
+    };
+
+    ret 0;
 };
