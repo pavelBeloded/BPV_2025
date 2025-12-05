@@ -1,4 +1,4 @@
------  Протокол ----- 2025-12-05 23:58:30------
+-----  Протокол ----- 2025-12-06 00:50:16------
 ----- Параметры -----
 -log: logs.log.txt
 -in : in.txt
@@ -49,22 +49,22 @@
 ---- Таблица идентификаторов ----
 №000|ID00000|Type000|DataType00|IdxFirstLE0|Value
 ------------------------------------------------------------
-0   |compu  |Func   |integer   |1          |
-1   |a      |Param  |integer   |1          |
-2   |b      |Param  |integer   |1          |
-3   |res    |Var    |integer   |2          |
+0   |compute|Func   |integer   |1          |
+1   |compute$a|Param  |integer   |1          |
+2   |compute$b|Param  |integer   |1          |
+3   |compute$res|Var    |integer   |2          |
 4   |L4     |Lit    |integer   |3          |2
-5   |getpr  |Func   |string    |7          |
+5   |getprefix|Func   |string    |7          |
 6   |L6     |Lit    |string    |8          |'Val: '
-7   |x      |Var    |integer   |12         |
-8   |y      |Var    |integer   |13         |
-9   |z      |Var    |integer   |14         |
-10  |s      |Var    |string    |15         |
+7   |entry$x|Var    |integer   |12         |
+8   |entry$y|Var    |integer   |13         |
+9   |entry$z|Var    |integer   |14         |
+10  |entry$s|Var    |string    |15         |
 11  |L11    |Lit    |integer   |17         |10
 12  |L12    |Lit    |integer   |18         |5
 13  |L13    |Lit    |string    |19         |'Start'
 14  |L14    |Lit    |integer   |25         |3
-15  |temp   |Var    |integer   |36         |
+15  |entry$temp|Var    |integer   |36         |
 16  |L16    |Lit    |integer   |39         |0
 17  |L17    |Lit    |integer   |40         |100
 18  |L18    |Lit    |integer   |42         |50
@@ -92,18 +92,18 @@
 240 i=il-;
 250 i=il*;
 260 i=il/;
-270 i=il#;
+270 i=il%;
 290 i=iii###;
 310 i=i##;
 320 pi;
 330 pi;
 350 w(i2i){
 360 dti;
-380 i=ii#;
-390 i=il#;
-400 i=il#;
-410 i=il#;
-420 i=il#;
+380 i=iie;
+390 i=iln;
+400 i=il<;
+410 i=il>;
+420 i=il1;
 440 i=il-;
 450 pi;
 460 };
