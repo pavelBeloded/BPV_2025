@@ -1,57 +1,33 @@
-#pragma once
-
 #include "stdafx.h"
+#include "MFST.h"
+#include "Error.h"
 #include <iostream>
 #include <iomanip> 
+#include <sstream>
+
 using namespace GRB;
 
 int FST_TRACE_n = -1;
 char rbuf[205], sbuf[205], lbuf[1024];
 
 namespace MFST {
-	MfstState::MfstState() {
-		tape_position = 0;
-		nrule = -1;
-		nrulechain = -1;
-	}
-
-	MfstState::MfstState(short pposition, MFSTSTACK pst, short pnrulechain)
-	{
-		tape_position = pposition;
-		st = pst;
-		nrulechain = pnrulechain;
-	};
-
-	MfstState::MfstState(short pposition, MFSTSTACK pst, short pnrule, short pnrulechain)
-	{
-		tape_position = pposition;
-		st = pst;
-		nrule = pnrule;
-		nrulechain = pnrulechain;
-	};
-
-	Mfst::MfstDiagnosis::MfstDiagnosis() {
-		tape_position = -1;
-		rc_step = SURPRISE;
-		nrule = -1;
-		nrule_chain = -1;
-	}
-
-	Mfst::MfstDiagnosis::MfstDiagnosis(short position, RC_STEP prc_step, short pnrule, short pnrule_chain){
-		tape_position = position;
-		rc_step = prc_step;
-		nrule = pnrule;
-		nrule_chain = pnrule_chain;
-	}
+	MfstState::MfstState() { tape_position = 0; nrule = -1; nrulechain = -1; }
+	MfstState::MfstState(short pposition, MFSTSTACK pst, short pnrulechain) { tape_position = pposition; st = pst; nrulechain = pnrulechain; };
+	MfstState::MfstState(short pposition, MFSTSTACK pst, short pnrule, short pnrulechain) { tape_position = pposition; st = pst; nrule = pnrule; nrulechain = pnrulechain; };
+	Mfst::MfstDiagnosis::MfstDiagnosis() { tape_position = -1; rc_step = SURPRISE; nrule = -1; nrule_chain = -1; }
+	Mfst::MfstDiagnosis::MfstDiagnosis(short position, RC_STEP prc_step, short pnrule, short pnrule_chain) { tape_position = position; rc_step = prc_step; nrule = pnrule; nrule_chain = pnrule_chain; }
 
 	Mfst::Mfst() {
 		tape = 0;
 		tape_size = tape_position = 0;
+		log = Log::INITLOG;
 	}
 
-	Mfst::Mfst(LT::LexTable plextable, GRB::Greibach pgreibach) {
+
+	Mfst::Mfst(LT::LexTable plextable, GRB::Greibach pgreibach, Log::LOG plog) {
 		grebach = pgreibach;
 		lextable = plextable;
+		log = plog; 
 		tape = new short[tape_size = lextable.size];
 
 		for (int i = 0; i < lextable.size; i++) {
@@ -59,60 +35,53 @@ namespace MFST {
 		}
 
 		tape_position = 0;
-		st.push(grebach.stbottomT);  
+		st.push(grebach.stbottomT);
 		st.push(grebach.startN);
 		nrulechain = -1;
 	}
-	/*Mfst::RC_STEP Mfst::step() {
-		RC_STEP rc = SURPRISE;
-		if (tape_position < tape_size) {
-			if (Rule::Chain::isN(st.top())) {
-				GRB::Rule rule;
-				if ((nrule = greibach.getRule(st.top(), rule)) >= 0) {
-					GRB::Rule::Chain chain;
-					if ((nrulechain = rule.getNextChain(tape[tape_position], chain, nrulechain + 1)) >= 0) {
-						MFST_TRACE1;
-						savestate();
-						st.pop();
-						push_chain(chain);
-						rc = NS_OK;
-						MFST_TRACE2;
-					}
-					else rc = NS_ERROR;
-				}
-				else if (st.top() == tape[tape_position]) {
-					tape_position++;
-					st.pop();
-					nrulechain = -1;
-					rc = TS_OK;
-					MFST_TRACE3;
-				}
-				else {
-					MFST_TRACE4("TS_NOK/NS_NORULECHAIN");
-					rc = reststate() ? TS_OK : NS_NORULECHAIN;
-				}
-			}
-			else {
-				rc = TAPE_END;
-				MFST_TRACE4("TAPE_END");
-			}
-			return rc;
+
+	void Mfst::printTrace(int mode, const char* msg, int k) {
+		if (log.stream == nullptr) return; 
+
+		std::stringstream ss;
+		GRB::Rule rule;
+		if (nrule != -1) rule = grebach.getRule(nrule);
+
+		switch (mode) {
+		case 1: 
+			ss << std::setw(4) << std::left << ++FST_TRACE_n << ": "
+				<< std::setw(30) << std::left << rule.getCRule(rbuf, nrulechain)
+				<< std::setw(30) << std::left << getCTape(lbuf, tape_position)
+				<< std::setw(20) << std::left << getCSt(sbuf);
+			break;
+		case 2: 
+		case 3:
+			ss << std::setw(4) << std::left << FST_TRACE_n << ": "
+				<< std::setw(30) << std::left << " "
+				<< std::setw(30) << std::left << getCTape(lbuf, tape_position)
+				<< std::setw(20) << std::left << getCSt(sbuf);
+			break;
+		case 4: 
+		case 5:
+			ss << std::setw(4) << std::left << ++FST_TRACE_n << ": "
+				<< std::setw(20) << std::left << msg;
+			break;
+		case 6: 
+			ss << std::setw(4) << std::left << FST_TRACE_n << ": "
+				<< std::setw(20) << std::left << msg << k;
+			break;
+		case 7: 
+						break;
 		}
-	}*/
+
+		if (mode != 7) Log::WriteLine(log, ss.str().c_str(), nullptr);
+	}
 
 	Mfst::RC_STEP Mfst::step()
 	{
 		RC_STEP rc = SURPRISE;
-
-		//cout << "DEBUG: tape[" << tape_position << "] = "
-		//    << GRB::Rule::Chain::alphabet_to_char(tape[tape_position])
-		//    << ", stack top = "
-		//    << GRB::Rule::Chain::alphabet_to_char(st.top())
-		//    << endl;
-
 		if (tape_position < tape_size)
 		{
-
 			if (ISNS(st.top()))
 			{
 				GRB::Rule rule;
@@ -128,20 +97,17 @@ namespace MFST {
 					else
 					{
 						MFST_TRACE4("TNS_NORULECHAIN/NS_NORULE");
-							savediagnosis(NS_NORULECHAIN); rc = reststate() ? NS_NORULECHAIN : NS_NORULE;
+						savediagnosis(NS_NORULECHAIN); rc = reststate() ? NS_NORULECHAIN : NS_NORULE;
 					}
 				}
-				else
-				{
-					rc = NS_ERROR;
-				}
+				else rc = NS_ERROR;
 			}
 			else if ((st.top() == tape[tape_position]))
 			{
 				tape_position++; st.pop(); nrulechain = -1; rc = TS_OK;
 				MFST_TRACE3
 			}
-			else { MFST_TRACE4(TS_NOK / NS_NORULECHAIN) rc = reststate() ? TS_NOK : NS_NORULECHAIN; };
+			else { MFST_TRACE4("TS_NOK/NS_NORULECHAIN") rc = reststate() ? TS_NOK : NS_NORULECHAIN; };
 		}
 		else {
 			rc = TAPE_END;
@@ -150,21 +116,17 @@ namespace MFST {
 		return rc;
 	};
 
-
 	bool Mfst::push_chain(GRB::Rule::Chain chain) {
-		for (int i = chain.size - 1; i >= 0; i--) {
-			st.push(chain.nt[i]);
-		}
-
+		for (int i = chain.size - 1; i >= 0; i--) st.push(chain.nt[i]);
 		return true;
 	}
 
 	bool Mfst::savestate() {
 		stateStack.push(MfstState(tape_position, st, nrule, nrulechain));
-		MFST_TRACE6("SAVESTATE:", stateStack.size());
-		/*std::cout << "  [DBG] saved: pos=" << tape_position << " nrule=" << nrule << " nrch=" << nrulechain << " stk=" << st.size() << std::endl;*/
+		MFST_TRACE6("SAVESTATE:", (int)stateStack.size());
 		return true;
 	}
+
 	bool Mfst::reststate() {
 		bool rc = false;
 		MfstState state;
@@ -177,7 +139,6 @@ namespace MFST {
 			stateStack.pop();
 			MFST_TRACE5("RESSTATE")
 				MFST_TRACE2
-			/*std::cout << "  [DBG] restored: pos=" << tape_position << " nrule=" << nrule << " nrch=" << nrulechain << " stk=" << st.size() << std::endl;*/
 		}
 		return rc;
 	}
@@ -186,12 +147,9 @@ namespace MFST {
 		bool rc = false;
 		short k = 0;
 		while (k < MFST_DIAGN_NUMBER && tape_position <= diagnosis[k].tape_position) k++;
-
 		if (rc = (k < MFST_DIAGN_NUMBER)) {
 			diagnosis[k] = MfstDiagnosis(tape_position, prc_step, nrule, nrulechain);
-			for (short j = k + 1; j < MFST_DIAGN_NUMBER; j++) {
-				diagnosis[j].tape_position = -1;
-			}
+			for (short j = k + 1; j < MFST_DIAGN_NUMBER; j++) diagnosis[j].tape_position = -1;
 		}
 		return rc;
 	}
@@ -210,28 +168,30 @@ namespace MFST {
 		case TAPE_END:
 		{
 			MFST_TRACE4("------>LENTA_END")
-				std::cout << "------------------------------------------------------------------------------------------   ------" << std::endl;
-			sprintf_s(buf, MFST_DIAGN_MAXSIZE, "%d: всего строк %d, синтаксический анализ выполнен без ошибок", 0, lextable.table[lextable.size - 1].sn);
-			std::cout << std::setw(4) << std::left << 0 << "всего строк " << lextable.table[lextable.size - 1].sn << ", синтаксический анализ выполнен без ошибок" << std::endl;
+
+				std::stringstream ss;
+			ss << "Всего строк " << lextable.table[lextable.size - 1].sn << ", синтаксический анализ выполнен без ошибок";
+			Log::WriteLine(log, ss.str().c_str(), nullptr);
+
+			//std::cout << "\nСинтаксический анализ: OK" << std::endl;
+
 			rc = true;
 			break;
 		}
-
 		case NS_NORULE:
 		{
 			MFST_TRACE4("------>NS_NORULE")
-				std::cout << "------------------------------------------------------------------------------------------   ------" << std::endl;
-			std::cout << getDiagnosis(0, buf) << std::endl;
-			std::cout << getDiagnosis(1, buf) << std::endl;
-			std::cout << getDiagnosis(2, buf) << std::endl;
+				std::stringstream ss;
+			ss << "------------------------------------------------------------------------------------------";
+			Log::WriteLine(log, ss.str().c_str(), nullptr);
+			Log::WriteLine(log, getDiagnosis(0, buf), nullptr);
+			Log::WriteLine(log, getDiagnosis(1, buf), nullptr);
+			Log::WriteLine(log, getDiagnosis(2, buf), nullptr);
 			break;
 		}
-
 		case NS_NORULECHAIN:	MFST_TRACE4("------>NS_NORULECHAIN") break;
 		case NS_ERROR:			MFST_TRACE4("------>NS_ERROR") break;
 		case SURPRISE:			MFST_TRACE4("------>NS_SURPRISE") break;
-
-
 		}
 		return rc;
 	}
@@ -249,10 +209,7 @@ namespace MFST {
 
 	char* Mfst::getCTape(char* buf, short pos, short n) {
 		short i = 0, k = (pos + n < tape_size) ? pos + n : tape_size;
-
-		for (int i = pos; i < k; i++)
-			buf[i - pos] = GRB::Rule::Chain::alphabet_to_char(tape[i]);
-
+		for (int i = pos; i < k; i++) buf[i - pos] = GRB::Rule::Chain::alphabet_to_char(tape[i]);
 		buf[i - pos] = '\0';
 		return buf;
 	}
@@ -274,10 +231,17 @@ namespace MFST {
 	void Mfst::printrules() {
 		MfstState state;
 		GRB::Rule rule;
+
+		Log::WriteLine(log, "\n--- ДЕРЕВО РАЗБОРА (RULES) ---", nullptr);
+
 		for (unsigned short i = 0; i < stateStack.size(); i++) {
 			state = stateStack.c[i];
 			rule = grebach.getRule(state.nrule);
-			MFST_TRACE7;
+
+			std::stringstream ss;
+			ss << std::setw(4) << std::left << state.tape_position << ": "
+				<< std::setw(20) << std::left << rule.getCRule(rbuf, state.nrulechain);
+			Log::WriteLine(log, ss.str().c_str(), nullptr);
 		}
 	}
 
@@ -286,7 +250,6 @@ namespace MFST {
 		GRB::Rule rule;
 		deducation.nrules = new short[deducation.size = stateStack.size()];
 		deducation.nrulechains = new short[deducation.size];
-
 		for (unsigned short i = 0; i < stateStack.size(); i++)
 		{
 			state = stateStack.c[i];
@@ -294,7 +257,5 @@ namespace MFST {
 			deducation.nrulechains[i] = state.nrulechain;
 		}
 		return true;
-	} 
-
-
+	}
 }

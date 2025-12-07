@@ -3,48 +3,34 @@
 #include <stack>
 #include <iostream>
 #include <iomanip> 
+#include <sstream> 
+#include "Log.h"   
+
 #define MFST_DIAGN_NUMBER 3
 #define MFST_DIAGN_MAXSIZE 2*ERROR_MAXSIZE_MESSAGE
 
-#define MFST_TRACE_START std::cout << std::setw(4) << std::left << "Шаг" << ":"\
-<< std::setw(20) << std::left << " Правило" \
-<< std::setw(30) << std::left << " Входная лента" \
-<< std::setw(20) << std::left << " Стек" \
-<< std::endl
-
+#define MFST_TRACE_START log.stream != nullptr ? Log::WriteLine(log, "--- MFST TRACE START ---", nullptr) : void()
 
 #define NS(n)       GRB::Rule::Chain::N(n)
 #define TS(n)       GRB::Rule::Chain::T(n)
 #define ISNS(n)     GRB::Rule::Chain::isN(n)
-#define MFST_TRACE1     std::cout<<std::setw(4)<<std::left<<++FST_TRACE_n<<": " \
-                        <<std::setw(20)<<std::left<<rule.getCRule(rbuf,nrulechain) \
-                        <<std::setw(30)<<std::left<<getCTape(lbuf, tape_position) \
-                        <<std::setw(20)<<std::left<<getCSt(sbuf) \
-                        <<std::endl;
-#define MFST_TRACE2     std::cout<<std::setw(4)<<std::left<< FST_TRACE_n<<": " \
-                        <<std::setw(20)<<std::left<<" " \
-                        <<std::setw(30)<<std::left<<getCTape(lbuf, tape_position) \
-                        <<std::setw(20)<<std::left<<getCSt(sbuf) \
-                        <<std::endl;
-#define MFST_TRACE3     std::cout<<std::setw(4)<<std::left<< ++FST_TRACE_n<<": " \
-                        <<std::setw(20)<<std::left<<" " \
-                        <<std::setw(30)<<std::left<<getCTape(lbuf, tape_position) \
-                        <<std::setw(20)<<std::left<<getCSt(sbuf) \
-                        <<std::endl;
-#define MFST_TRACE4(c)  std::cout<<std::setw(4)<<std::left<< ++FST_TRACE_n<<": "<<std::setw(20)<<std::left<<c<<std::endl;
-#define MFST_TRACE5(c)  std::cout<<std::setw(4)<<std::left<<  FST_TRACE_n<<": "<<std::setw(20)<<std::left<<c<<std::endl;
-#define MFST_TRACE6(c,k) std::cout<<std::setw(4)<<std::left<< FST_TRACE_n<<": "<<std::setw(20)<<std::left<<c<<k<<std::endl;
-#define MFST_TRACE7     std::cout<<std::setw(4)<<std::left<<state.tape_position<<": " \
-                        <<std::setw(20)<<std::left<<rule.getCRule(rbuf,state.nrulechain) \
-                        <<std::endl;
+
+#define MFST_TRACE1     printTrace(1);
+#define MFST_TRACE2     printTrace(2);
+#define MFST_TRACE3     printTrace(3);
+#define MFST_TRACE4(c)  printTrace(4, c);
+#define MFST_TRACE5(c)  printTrace(5, c);
+#define MFST_TRACE6(c,k) printTrace(6, c, k);
+#define MFST_TRACE7     printTrace(7);
 
 
 class MFSTSTACK : public std::stack<short> {
 public:
 	using std::stack<short>::c;
 };
+
 namespace MFST {
-	
+
 	struct MfstState {
 		short tape_position;
 		short nrule;
@@ -87,14 +73,14 @@ namespace MFST {
 		short nrulechain;
 		short tape_size;
 		GRB::Greibach grebach;
-
 		LT::LexTable lextable;
 		MFSTSTACK st;
-
 		MFSTSTATE stateStack;
 
+		Log::LOG log;
+
 		Mfst();
-		Mfst(LT::LexTable plextable, GRB::Greibach pgreibach);
+		Mfst(LT::LexTable plextable, GRB::Greibach pgreibach, Log::LOG plog);
 
 		char* getCSt(char* buf);
 		char* getCTape(char* buf, short pos, short n = 25);
@@ -107,6 +93,8 @@ namespace MFST {
 		bool savediagnosis(RC_STEP prc_step);
 		void printrules();
 
+		void printTrace(int mode, const char* msg = "", int k = 0);
+
 		struct Deducation {
 			short size;
 			short* nrules;
@@ -115,9 +103,8 @@ namespace MFST {
 				size = 0;
 				nrules = 0;
 				nrulechains = 0;
-			} 
+			}
 		} deducation;
 		bool savededucation();
 	};
-
 }

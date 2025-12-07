@@ -1,8 +1,5 @@
 uint proc math(uint a, uint b) {
-echo 'a = ';
-echo a;
-echo 'b = ';
-echo b;
+
     var uint res;
     // Сложное выражение с приоритетами
     res = (a + b) * 2 - (a % 2); 

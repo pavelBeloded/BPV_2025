@@ -4,7 +4,7 @@
 #include <stack>
 #include <string>
 #include <vector>
-#include <iostream>
+#include <sstream>
 
 namespace Semantics {
 
@@ -61,10 +61,11 @@ namespace Semantics {
 		return params;
 	}
 
-	bool Analyze(LT::LexTable& lextable, IT::IdTable& idtable) {
+	bool Analyze(LT::LexTable& lextable, IT::IdTable& idtable, Log::LOG log) {
 		std::stack<IT::IDDATATYPE> typeStack;
 		bool entryPointFound = false;
 
+		// Проверка entry
 		for (int i = 0; i < lextable.size; i++) {
 			if (lextable.table[i].lexema == LEX_MAIN) {
 				entryPointFound = true;
@@ -86,21 +87,12 @@ namespace Semantics {
 
 			case LEX_ID: {
 				if (i > 0 && lextable.table[i - 1].lexema == LEX_FUNCTION) break;
-
 				IT::Entry itEntry = IT::GetEntry(idtable, entry.idxTI);
 
 				if (itEntry.idtype == IT::F) {
 					std::vector<IT::IDDATATYPE> expectedParams = GetFunctionParams(idtable, entry.idxTI);
 
-					// --- DEBUG LOG START ---
-				/*	std::cout << "[DEBUG] Call Function: " << itEntry.id
-						<< " | Expected Params: " << expectedParams.size()
-						<< " | Stack Size: " << typeStack.size() << std::endl;*/
-					// -----------------------
-
-					if (typeStack.size() < expectedParams.size()) {
-						throw ERROR_THROW_IN(306, entry.sn, -1);
-					}
+					if (typeStack.size() < expectedParams.size()) throw ERROR_THROW_IN(306, entry.sn, -1);
 
 					for (int p = (int)expectedParams.size() - 1; p >= 0; p--) {
 						IT::IDDATATYPE argType = typeStack.top();
@@ -136,11 +128,7 @@ namespace Semantics {
 			}
 
 			case LEX_ASSIGN: {
-				if (typeStack.size() < 2) {
-					// --- DEBUG LOG ---
-					std::cout << "[DEBUG] Assign Error. Stack Size: " << typeStack.size() << std::endl;
-					throw ERROR_THROW_IN(602, entry.sn, -1);
-				}
+				if (typeStack.size() < 2) throw ERROR_THROW_IN(602, entry.sn, -1);
 				IT::IDDATATYPE right = typeStack.top(); typeStack.pop();
 				IT::IDDATATYPE left = typeStack.top(); typeStack.pop();
 				if (left != right) throw ERROR_THROW_IN(303, entry.sn, -1);
@@ -148,17 +136,10 @@ namespace Semantics {
 			}
 
 			case LEX_PRINT:
-			case LEX_RETURN: {
-				if (typeStack.empty()) throw ERROR_THROW_IN(602, entry.sn, -1);
-				typeStack.pop();
-				break;
-			}
-
+			case LEX_RETURN:
 			case LEX_WHILE: {
 				if (typeStack.empty()) throw ERROR_THROW_IN(602, entry.sn, -1);
 				typeStack.pop();
-				// После while(...) мы переходим в блок, стек нужно чистить?
-				// Нет, while сам по себе statement.
 				break;
 			}
 

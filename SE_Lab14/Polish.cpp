@@ -3,7 +3,8 @@
 #include "Error.h"
 #include <stack>
 #include <vector>
-#include <iostream>
+#include <string>
+#include <sstream>
 
 namespace Polish {
 
@@ -33,8 +34,7 @@ namespace Polish {
 		}
 	}
 
-	// Возвращаем int (индекс конца) вместо bool
-	int PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtable) {
+	int PolishNotation(int lextable_pos, LT::LexTable& lextable, IT::IdTable& idtable, Log::LOG log) {
 		std::stack<LT::Entry> stack;
 		std::vector<LT::Entry> out_buf;
 
@@ -45,7 +45,6 @@ namespace Polish {
 			end_pos++;
 		}
 
-		// Если вышли за границы - ошибка
 		if (end_pos > lextable.size) return -1;
 
 		for (int i = lextable_pos; i < end_pos; i++) {
@@ -117,33 +116,41 @@ namespace Polish {
 			lextable.table[k].idxTI = LT_TI_NULLIDX;
 		}
 
-		/*std::cout << "Polish: ";
+		// --- Логирование результата в файл ---
+		std::stringstream ss;
+		ss << "Polish: ";
 		for (int k = 0; k < out_index; k++) {
 			LT::Entry e = lextable.table[lextable_pos + k];
-			if (e.lexema == LEX_ID) std::cout << IT::GetEntry(idtable, e.idxTI).id << " ";
+			if (e.lexema == LEX_ID) ss << IT::GetEntry(idtable, e.idxTI).id << " ";
 			else if (e.lexema == LEX_LITERAL) {
 				IT::Entry lit = IT::GetEntry(idtable, e.idxTI);
-				if (lit.iddatatype == IT::INT) std::cout << lit.value.vint << " ";
-				else std::cout << "'" << lit.value.vstr.str << "' ";
+				if (lit.iddatatype == IT::INT) ss << lit.value.vint << " ";
+				else ss << "'" << lit.value.vstr.str << "' ";
 			}
 			else {
 				switch (e.lexema) {
-				case LEX_ASSIGN: std::cout << "= "; break;
-				case LEX_PLUS: std::cout << "+ "; break;
-				case LEX_MINUS: std::cout << "- "; break;
-				case LEX_STAR: std::cout << "* "; break;
-				case LEX_DIRSLASH: std::cout << "/ "; break;
-				case LEX_EQ: std::cout << "== "; break;
-				case LEX_RETURN: std::cout << "ret "; break;
-				case LEX_PRINT: std::cout << "echo "; break;
-				case LEX_WHILE: std::cout << "while "; break;
-				default: std::cout << e.lexema << " ";
+				case LEX_ASSIGN: ss << "= "; break;
+				case LEX_PLUS: ss << "+ "; break;
+				case LEX_MINUS: ss << "- "; break;
+				case LEX_STAR: ss << "* "; break;
+				case LEX_DIRSLASH: ss << "/ "; break;
+				case LEX_MODULO: ss << "% "; break;
+				case LEX_EQ: ss << "== "; break;
+				case LEX_NE: ss << "!= "; break;
+				case LEX_LE: ss << "<= "; break;
+				case LEX_GE: ss << ">= "; break;
+				case LEX_LESS: ss << "< "; break;
+				case LEX_MORE: ss << "> "; break;
+				case LEX_RETURN: ss << "ret "; break;
+				case LEX_PRINT: ss << "echo "; break;
+				case LEX_WHILE: ss << "while "; break;
+				default: ss << e.lexema << " ";
 				}
 			}
 		}
-		std::cout << std::endl;*/
+		Log::WriteLine(log, ss.str().c_str(), nullptr);
+		// -------------------------------------
 
-		// Возвращаем индекс, на котором остановились (точка с запятой или скобка)
 		return end_pos;
 	}
 }

@@ -1,11 +1,11 @@
 #include "stdafx.h"
 #include "CodeGen.h"
 #include "Error.h"
-#include <iostream>
 #include <stack>
 #include <vector>
 #include <map>
 #include <iomanip>
+#include <sstream>
 
 namespace CodeGen {
 
@@ -22,9 +22,7 @@ namespace CodeGen {
 		size_t entryPoint = 0;
 		size_t currentStatementStart = 0;
 
-		code.push_back({ CMD_JMP, 0 }); // Jump to entry point placeholder
-
-		//std::cout << "\n[GEN DEBUG] Starting Generation...\n";
+		code.push_back({ CMD_JMP, 0 }); // Заглушка для прыжка на entry
 
 		for (int i = 0; i < lextable.size; i++) {
 			LT::Entry entry = lextable.table[i];
@@ -33,16 +31,11 @@ namespace CodeGen {
 			switch (entry.lexema) {
 
 			case LEX_FUNCTION: {
-				//std::cout << "FUNC DECL";
-				// i указывает на 'f'
-				// i+1 = ID (имя функции)
-
 				if (i + 1 < lextable.size && lextable.table[i + 1].lexema == LEX_ID) {
 					int funcIdIdx = lextable.table[i + 1].idxTI;
 					functionMap[funcIdIdx] = currentAddr;
-					i++; // Пропускаем имя функции (становимся на ID)
+					i++;
 
-					// --- Генерируем POP для параметров ---
 					IT::Entry funcEntry = IT::GetEntry(idtable, funcIdIdx);
 					std::string prefix = std::string(funcEntry.id) + "$";
 					std::vector<int> paramIndices;
@@ -56,48 +49,32 @@ namespace CodeGen {
 						}
 					}
 
-					// POP в обратном порядке (так как в стеке a, b, а POP забирает b, a)
-					for (int k = paramIndices.size() - 1; k >= 0; k--) {
+					// POP параметров в обратном порядке
+					for (int k = (int)paramIndices.size() - 1; k >= 0; k--) {
 						code.push_back({ CMD_POP, (size_t)paramIndices[k] });
 					}
 
-					// --- ИСПРАВЛЕНИЕ: Пропускаем список параметров ( ... ) ---
-					// Сейчас i указывает на имя функции. Следующая должна быть '('.
-					// Нам нужно пропустить всё до '{'.
-
+					// Пропускаем параметры до тела функции
 					while (i + 1 < lextable.size) {
-						if (lextable.table[i + 1].lexema == LEX_LEFTBRACE) {
-							break; // Нашли начало тела, останавливаемся
-						}
-						i++; // Пропускаем лексему (параметры, запятые, типы)
+						if (lextable.table[i + 1].lexema == LEX_LEFTBRACE) break;
+						i++;
 					}
-					// Теперь следующий шаг цикла for возьмет '{'
 				}
 				break;
 			}
 
 			case LEX_MAIN: {
-				//std::cout << "MAIN ENTRY";
 				entryPoint = currentAddr;
-
-				// У main тоже есть скобка '{', убедимся что не пропускаем лишнего
-				// Обычно после m идет {, так что всё ок
 				break;
 			}
 
 			case LEX_DECLARE: {
 				bool hasInit = true;
-				// Проверка: d t i ; (нет init) vs d t i ... = ;
 				if (i + 3 < lextable.size) {
 					if (lextable.table[i + 3].lexema == LEX_SEMICOLON) hasInit = false;
 				}
-
-				if (hasInit) {
-					i += 1; // Пропускаем d, t. След -> i (сгенерирует PUSH VAR)
-				}
-				else {
-					i += 2; // Пропускаем d, t, i. След -> ;
-				}
+				if (hasInit) i += 1;
+				else i += 2;
 				break;
 			}
 
@@ -158,22 +135,6 @@ namespace CodeGen {
 
 			case LEX_BRACELET: {
 				if (!loops.empty()) {
-					// Проверяем, закрывает ли это while
-					// В твоем синтаксисе while (...) { ... };
-					// JZ прыгает на метку ПОСЛЕ цикла.
-					// В конце тела нужен JMP в начало.
-
-					// Но у нас brace закрывает блок функции тоже.
-					// Простой эвристикой: если стек циклов не пуст, считаем что это конец цикла?
-					// Нет, это опасно.
-
-					// В твоем коде while(...) { ... }; 
-					// JZ генерируется на слове 'while' (в ПОЛИЗе оно в конце условия).
-					// { - начало тела.
-					// } - конец тела.
-					// ; - конец оператора while.
-
-					// Давай пока оставим как есть, если циклы работали.
 					LoopScope loop = loops.top();
 					loops.pop();
 					code.push_back({ CMD_JMP, loop.conditionStart });
@@ -185,7 +146,6 @@ namespace CodeGen {
 
 			case LEX_TYPE: break;
 			case '#': break;
-				// Пропускаем запятые, скобки (они уже отработали в ПОЛИЗе или не нужны)
 			case LEX_COMMA: break;
 			case LEX_LEFTHESIS: break;
 			case LEX_RIGHTHESIS: break;
@@ -194,12 +154,10 @@ namespace CodeGen {
 			}
 		}
 
-		// Fixup Entry Point
 		if (entryPoint > 0) {
 			code[0].target = entryPoint;
 		}
 
-		// Fixup Library Calls
 		for (auto& instr : code) {
 			if (instr.op == CMD_CALL) {
 				int funcIdx = (int)instr.target;
@@ -215,32 +173,35 @@ namespace CodeGen {
 		return code;
 	}
 
-	void Debug(ByteCode& bytecode, IT::IdTable& idtable) {
-		std::cout << "\n--- BYTECODE ---\n";
+	void Debug(ByteCode& bytecode, IT::IdTable& idtable, Log::LOG log) {
+		std::stringstream ss;
+		ss << "\n--- BYTECODE DUMP ---\n";
 		for (size_t i = 0; i < bytecode.size(); i++) {
-			std::cout << std::setw(3) << i << ": ";
+			ss << std::setw(3) << i << ": ";
 			switch (bytecode[i].op) {
-			case CMD_PUSH: std::cout << "PUSH " << IT::GetEntry(idtable, (int)bytecode[i].target).id; break;
+			case CMD_PUSH: ss << "PUSH " << IT::GetEntry(idtable, (int)bytecode[i].target).id; break;
 			case CMD_POP:
-				if (bytecode[i].target == LT_TI_NULLIDX) std::cout << "ASSIGN";
-				else std::cout << "POP " << IT::GetEntry(idtable, (int)bytecode[i].target).id;
+				if (bytecode[i].target == LT_TI_NULLIDX) ss << "ASSIGN";
+				else ss << "POP " << IT::GetEntry(idtable, (int)bytecode[i].target).id;
 				break;
-			case CMD_ADD: std::cout << "ADD"; break;
-			case CMD_SUB: std::cout << "SUB"; break;
-			case CMD_MUL: std::cout << "MUL"; break;
-			case CMD_DIV: std::cout << "DIV"; break;
-			case CMD_CMPE: std::cout << "CMPE"; break;
-			case CMD_CMPL: std::cout << "CMPL"; break;
-			case CMD_JMP: std::cout << "JMP " << bytecode[i].target; break;
-			case CMD_JZ: std::cout << "JZ " << bytecode[i].target; break;
-			case CMD_CALL: std::cout << "CALL " << bytecode[i].target; break;
-			case CMD_RET: std::cout << "RET"; break;
-			case CMD_PRINT: std::cout << "PRINT"; break;
-			case CMD_CALL_LIB: std::cout << "CALL LIB " << IT::GetEntry(idtable, (int)bytecode[i].target).id; break;
-			default: std::cout << "OP " << bytecode[i].op;
+			case CMD_ADD: ss << "ADD"; break;
+			case CMD_SUB: ss << "SUB"; break;
+			case CMD_MUL: ss << "MUL"; break;
+			case CMD_DIV: ss << "DIV"; break;
+			case CMD_CMPE: ss << "CMPE"; break;
+			case CMD_CMPL: ss << "CMPL"; break;
+			case CMD_CMPG: ss << "CMPG"; break;
+			case CMD_JMP: ss << "JMP " << bytecode[i].target; break;
+			case CMD_JZ: ss << "JZ " << bytecode[i].target; break;
+			case CMD_CALL: ss << "CALL " << bytecode[i].target; break;
+			case CMD_RET: ss << "RET"; break;
+			case CMD_PRINT: ss << "PRINT"; break;
+			case CMD_CALL_LIB: ss << "CALL LIB " << IT::GetEntry(idtable, (int)bytecode[i].target).id; break;
+			default: ss << "OP " << bytecode[i].op;
 			}
-			std::cout << std::endl;
+			ss << "\n";
 		}
-		std::cout << "----------------\n";
+		ss << "---------------------\n";
+		Log::WriteLine(log, ss.str().c_str(), nullptr);
 	}
 }
