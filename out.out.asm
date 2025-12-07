@@ -2,16 +2,16 @@
 .model flat, stdcall
 option casemap :none
 
-; --- Подключение библиотек ---
+; --- Libs ---
 includelib kernel32.lib
 includelib libucrt.lib
 
-; --- Прототипы функций WinAPI ---
+; --- WinAPI ---
 ExitProcess PROTO :DWORD
 GetStdHandle PROTO :DWORD
 WriteConsoleA PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
 
-; --- Прототипы твоих функций (Library.cpp) ---
+; --- User Lib ---
 length PROTO :DWORD
 tostr PROTO :DWORD
 touint PROTO :DWORD
@@ -32,19 +32,19 @@ substr PROTO :DWORD, :DWORD, :DWORD
 	entry$temp_s db "55", 0
 	entry$temp_n dd 60
 	entry$d db "07.12.2025", 0
-	entry$t db "22:36:37", 0
+	entry$t db "22:39:06", 0
 	L14 dd 8
 	L15 db "--- Standard Library Test ---", 0
 	L16 db "Date:", 0
 	L17 db "Time:", 0
-	L18 db "Length of "Hello World":", 0
+	L18 db "Length of 'Hello World':", 0
 	L19 dd 6
 	L20 dd 5
 	L21 db "Substring result:", 0
 	L22 dd 2025
 	L23 db "Converted number to string:", 0
 	L24 db "55", 0
-	L25 db "Converted string "55" + 5 = ", 0
+	L25 db "Converted string '55' + 5 = ", 0
 	L26 db "--- Logic Test ---", 0
 	L27 dd 2020
 	L28 dd 1
@@ -116,7 +116,6 @@ L4: push offset entry$str
 L5: push offset L9
 
 L6: pop eax
-mov eax, [eax]
 pop ebx
 mov [ebx], eax
 push eax
@@ -130,8 +129,7 @@ invoke print_newline
 L9: push offset L15
 
 L10: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L11: push offset entry$d
@@ -146,20 +144,18 @@ push eax
 L14: push offset L16
 
 L15: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L16: push offset entry$d
 
 L17: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L18: push offset entry$t
 
-L19: call time
+L19: call get_time
 
 L20: pop eax
 pop ebx
@@ -169,15 +165,13 @@ push eax
 L21: push offset L17
 
 L22: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L23: push offset entry$t
 
 L24: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L25: push offset entry$temp_n
@@ -194,8 +188,7 @@ push eax
 L29: push offset L18
 
 L30: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L31: push offset entry$temp_n
@@ -223,15 +216,13 @@ push eax
 L39: push offset L21
 
 L40: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L41: push offset entry$temp_s
 
 L42: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L43: push offset entry$num
@@ -257,15 +248,13 @@ push eax
 L50: push offset L23
 
 L51: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L52: push offset entry$temp_s
 
 L53: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L54: push offset entry$temp_s
@@ -273,7 +262,6 @@ L54: push offset entry$temp_s
 L55: push offset L24
 
 L56: pop eax
-mov eax, [eax]
 pop ebx
 mov [ebx], eax
 push eax
@@ -309,8 +297,7 @@ push eax
 L66: push offset L25
 
 L67: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L68: push offset entry$temp_n
@@ -323,8 +310,7 @@ invoke print_newline
 L70: push offset L26
 
 L71: pop eax
-mov eax, [eax]
-invoke outnum_oct, eax
+invoke print_str, eax
 invoke print_newline
 
 L72: push offset entry$num

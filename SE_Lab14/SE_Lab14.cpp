@@ -1,10 +1,7 @@
 ﻿#include <iostream>
 #include <cwchar>
 #include "stdafx.h"
-#include "Polish.h"
-#include "Semantics.h"
-#include "CodeGen.h"
-#include "Executor.h"
+
 
 int wmain(int argc, wchar_t* argv[]) {
 	setlocale(LC_ALL, "Ru");
@@ -68,8 +65,11 @@ int wmain(int argc, wchar_t* argv[]) {
 		Log::WriteLine(log, "\n--- Выполнение (Интерпретатор) ---", nullptr);
 		Executor::Execute(bytecode, idtable, log);
 
-		Out::WriteIn(out, in);
-		std::cout << "\nПрограмма выполнена успешно. Результат см. в консоли и лог-файле." << std::endl;
+
+		Log::WriteLine(log, "\n--- Генерация ASM ---", nullptr);
+		Gener::CodeGeneration(bytecode, idtable, parm.out);
+
+		//Out::WriteIn(out, in);
 	}
 	catch (Error::ERROR error) {
 		if (log.stream == nullptr) {

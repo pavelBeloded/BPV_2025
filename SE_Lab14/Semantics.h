@@ -9,6 +9,5 @@
 
 namespace Semantics {
 	void InjectStandardLibrary(IT::IdTable& idtable);
-	// Добавили log
 	bool Analyze(LT::LexTable& lextable, IT::IdTable& idtable, Log::LOG log);
 }

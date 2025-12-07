@@ -5,14 +5,13 @@ entry {
     var uint temp_n;
     var text d;
     var text t;
-	echo 010;
     echo '--- Standard Library Test ---';
-
+	echo 55;
     // 1. Тест date()
     d = date();
     echo 'Date:';
     echo d;
-
+	echo 'hello karina';
     // 2. Тест time()
     t = time();
     echo 'Time:';

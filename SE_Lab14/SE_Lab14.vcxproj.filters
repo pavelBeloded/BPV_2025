@@ -60,7 +60,10 @@
     <ClCompile Include="Executor.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="Library.cpp">
+    <ClCompile Include="Gener.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="..\STL\STL.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,9 +101,6 @@
     <ClInclude Include="MFST.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="GreibachRules.h">
-      <Filter>Файлы заголовков</Filter>
-    </ClInclude>
     <ClInclude Include="Polish.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
@@ -111,6 +111,9 @@
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
     <ClInclude Include="Executor.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Gener.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>

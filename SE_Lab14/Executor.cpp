@@ -10,12 +10,12 @@
 
 // Подключаем функции из Library.cpp
 extern "C" {
-	int   __stdcall length(char* s);
+	int   __stdcall str_len(char* s);
 	char* __stdcall tostr(int n);
 	int   __stdcall touint(char* s);
 	char* __stdcall date();
 	char* __stdcall get_time();
-	char* __stdcall substr(char* s, int start, int len);
+	char* __stdcall sub_str(char* s, int start, int len);
 	void  __stdcall pause_prog();
 }
 
@@ -291,10 +291,10 @@ namespace Executor {
 
 				if (name == "date") { char* d = date(); strcpy_s(res.s_val, d); res.type = IT::STR; }
 				else if (name == "time") { char* t = get_time(); strcpy_s(res.s_val, t); res.type = IT::STR; }
-				else if (name == "length") { Value arg = stack.back(); stack.pop_back(); res.i_val = length(arg.s_val); res.type = IT::INT; }
+				else if (name == "length") { Value arg = stack.back(); stack.pop_back(); res.i_val = str_len(arg.s_val); res.type = IT::INT; }
 				else if (name == "tostr") { Value arg = stack.back(); stack.pop_back(); char* s = tostr(arg.i_val); strcpy_s(res.s_val, s); res.type = IT::STR; }
 				else if (name == "touint") { Value arg = stack.back(); stack.pop_back(); res.i_val = touint(arg.s_val); res.type = IT::INT; }
-				else if (name == "substr") { Value l = stack.back(); stack.pop_back(); Value s = stack.back(); stack.pop_back(); Value str = stack.back(); stack.pop_back(); char* resS = substr(str.s_val, s.i_val, l.i_val); strcpy_s(res.s_val, resS); res.type = IT::STR; }
+				else if (name == "substr") { Value l = stack.back(); stack.pop_back(); Value s = stack.back(); stack.pop_back(); Value str = stack.back(); stack.pop_back(); char* resS = sub_str(str.s_val, s.i_val, l.i_val); strcpy_s(res.s_val, resS); res.type = IT::STR; }
 
 				stack.push_back(res);
 				break;
