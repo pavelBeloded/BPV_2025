@@ -1,32 +1,56 @@
-uint proc math(uint a, uint b) {
-
-    var uint res;
-    // Сложное выражение с приоритетами
-    res = (a + b) * 2 - (a % 2); 
-    ret res;
-};
-
 entry {
-    var uint x = 10;
-    var uint y = 20;
-    var text dateStr;
-    var uint len;
-    // Использование библиотеки
-    dateStr = date();
-    len = length(dateStr);
+    var uint num = 0;
+    var text str = 'Hello World';
+    var text temp_s;
+    var uint temp_n;
+    var text d;
+    var text t;
+
+    echo '--- Standard Library Test ---';
+
+    // 1. Тест date()
+    d = date();
+    echo 'Date:';
+    echo d;
+
+    // 2. Тест time()
+    t = time();
+    echo 'Time:';
+    echo t;
+
+    // 3. Тест length(text)
+    temp_n = length(str);
+    echo 'Length of "Hello World":';
+    echo temp_n;
+
+    // 4. Тест substr(text, start, len)
+    // Извлекаем "World" (с 6 индекса, длина 5)
+    temp_s = substr(str, 6, 5);
+    echo 'Substring result:';
+    echo temp_s;
+
+    // 5. Тест tostr(uint)
+    // Преобразуем число в строку
+    num = 2025;
+    temp_s = tostr(num);
+    echo 'Converted number to string:';
+    echo temp_s;
+
+    // 6. Тест touint(text)
+    // Преобразуем строку "55" в число и прибавляем 5
+    temp_s = '55';
+    temp_n = touint(temp_s);
+    temp_n = temp_n + 5;
+    echo 'Converted string "55" + 5 = ';
+    echo temp_n;
+
+    echo '--- Logic Test ---';
     
-    echo dateStr;
-    echo len;
-echo y;
-    // Цикл и условия
-    while (x < y) {
-        var uint temp;
-        temp = math(x, 5);
-        echo temp;
-        x = x + 2;
+    // Цикл while
+    while (num > 2020) {
+        num = num - 1;
+        echo num;
     };
-
-
 
     ret 0;
 };

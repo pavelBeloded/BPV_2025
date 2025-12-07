@@ -33,7 +33,9 @@ int wmain(int argc, wchar_t* argv[]) {
 
 		MFST_TRACE_START;
 		MFST::Mfst mfst(lextable, GRB::getGreibach(), log);
-		mfst.start();
+		if (!mfst.start()) {
+			throw ERROR_THROW(600); 
+		}
 
 		mfst.savededucation();
 		mfst.printrules();
