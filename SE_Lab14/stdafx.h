@@ -10,4 +10,5 @@
 #include "MFST.h"
 #include "RemoveSpaces.h"
 #include "Polish.h"
-#include "Semantics.h" 
+#include "Semantics.h"
+#include "CodeGen.h"

@@ -134,6 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="GRB.cpp" />
     <ClCompile Include="In.cpp" />
@@ -149,6 +150,7 @@
     <ClCompile Include="SE_Lab14.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CodeGen.h" />
     <ClInclude Include="Error.h" />
     <ClInclude Include="GRB.h" />
     <ClInclude Include="GreibachRules.h" />

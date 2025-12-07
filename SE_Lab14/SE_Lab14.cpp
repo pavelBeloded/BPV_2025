@@ -82,8 +82,8 @@ int wmain(int argc, wchar_t* argv[]) {
             Log::WriteLine(log, "Семантический анализ прошел успешно.", nullptr);
         }
 
-        // 7. Генерация кода (Следующий этап)
-        // ...
+        CodeGen::ByteCode bytecode = CodeGen::Generate(lextable, idtable);
+        CodeGen::Debug(bytecode, idtable);
 
         Out::WriteIn(out, in);
     }
