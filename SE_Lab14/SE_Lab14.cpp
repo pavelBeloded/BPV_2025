@@ -35,7 +35,7 @@ int wmain(int argc, wchar_t* argv[]) {
         mfst.savededucation();
         mfst.printrules();
 
-        std::cout << "\n--- Построение ПОЛИЗ ---" << std::endl;
+        //std::cout << "\n--- Построение ПОЛИЗ ---" << std::endl;
         bool polish_ok = true;
         for (int i = 0; i < lextable.size; i++) {
 
@@ -76,14 +76,16 @@ int wmain(int argc, wchar_t* argv[]) {
         Log::WriteLine(log, "\n--- Таблица лексем после ПОЛИЗ ---", nullptr);
         Log::WriteLT(log, lextable);
 
-        std::cout << "\n--- Семантический анализ ---" << std::endl;
+        //std::cout << "\n--- Семантический анализ ---" << std::endl;
         if (Semantics::Analyze(lextable, idtable)) {
-            std::cout << "Семантический анализ прошел успешно." << std::endl;
+            //std::cout << "Семантический анализ прошел успешно." << std::endl;
             Log::WriteLine(log, "Семантический анализ прошел успешно.", nullptr);
         }
 
         CodeGen::ByteCode bytecode = CodeGen::Generate(lextable, idtable);
-        CodeGen::Debug(bytecode, idtable);
+        //CodeGen::Debug(bytecode, idtable);
+
+        Executor::Execute(bytecode, idtable);
 
         Out::WriteIn(out, in);
     }

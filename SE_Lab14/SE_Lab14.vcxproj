@@ -136,9 +136,11 @@
   <ItemGroup>
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="Error.cpp" />
+    <ClCompile Include="Executor.cpp" />
     <ClCompile Include="GRB.cpp" />
     <ClCompile Include="In.cpp" />
     <ClCompile Include="IT.cpp" />
+    <ClCompile Include="Library.cpp" />
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="LT.cpp" />
     <ClCompile Include="MFST.cpp" />
@@ -152,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="CodeGen.h" />
     <ClInclude Include="Error.h" />
+    <ClInclude Include="Executor.h" />
     <ClInclude Include="GRB.h" />
     <ClInclude Include="GreibachRules.h" />
     <ClInclude Include="In.h" />

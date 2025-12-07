@@ -93,9 +93,9 @@ namespace Semantics {
 					std::vector<IT::IDDATATYPE> expectedParams = GetFunctionParams(idtable, entry.idxTI);
 
 					// --- DEBUG LOG START ---
-					std::cout << "[DEBUG] Call Function: " << itEntry.id
+				/*	std::cout << "[DEBUG] Call Function: " << itEntry.id
 						<< " | Expected Params: " << expectedParams.size()
-						<< " | Stack Size: " << typeStack.size() << std::endl;
+						<< " | Stack Size: " << typeStack.size() << std::endl;*/
 					// -----------------------
 
 					if (typeStack.size() < expectedParams.size()) {

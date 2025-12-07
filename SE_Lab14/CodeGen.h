@@ -28,6 +28,7 @@ namespace CodeGen {
 		CMD_JZ,
 
 		CMD_CALL,
+		CMD_CALL_LIB,
 		CMD_RET,
 		CMD_PRINT
 	};

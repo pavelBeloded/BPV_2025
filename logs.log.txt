@@ -1,35 +1,40 @@
------  Протокол ----- 2025-12-07 15:21:06------
+-----  Протокол ----- 2025-12-07 17:06:42------
 ----- Параметры -----
 -log: logs.log.txt
 -in : in.txt
 -out: out.out.txt
 ---- Статистика -----
-Количество символов: 503
-Проигнорировано: 29
-Количество строк: 29
+Количество символов: 553
+Проигнорировано: 34
+Количество строк: 34
 ---- Таблица лексем ----
 001 tfi(ti,ti){
-002 dti;
-004 i=(i+i)*l-(i%l);
-005 ri;
-006 };
-008 m{
-009 dti=l;
-010 dti=l;
-011 dti;
-012 dti;
-015 i=i();
-016 i=i(i);
-018 pi;
-019 pi;
-022 w(i<i){
-023 dti;
-024 i=i(i,l);
-025 pi;
-026 i=i+l;
-027 };
-029 rl;
+002 pl;
+003 pi;
+004 pl;
+005 pi;
+006 dti;
+008 i=(i+i)*l-(i%l);
+009 ri;
+010 };
+012 m{
+013 dti=l;
+014 dti=l;
+015 dti;
+016 dti;
+018 i=i();
+019 i=i(i);
+021 pi;
+022 pi;
+023 pi;
+025 w(i<i){
+026 dti;
+027 i=i(i,l);
+028 pi;
+029 i=i+l;
 030 };
+034 rl;
+035 };
 ---- Таблица идентификаторов ----
 No00|ID0000000000000|Type000|DataType00|Idx00000000|Value
 ------------------------------------------------------------
@@ -42,15 +47,48 @@ No00|ID0000000000000|Type000|DataType00|Idx00000000|Value
 6   |math           |Func   |uint      |1          |
 7   |math$a         |Param  |uint      |1          |
 8   |math$b         |Param  |uint      |1          |
-9   |math$res       |Var    |uint      |2          |
-10  |L10            |Lit    |uint      |4          |2
-11  |entry$x        |Var    |uint      |9          |
-12  |L12            |Lit    |uint      |9          |10
-13  |entry$y        |Var    |uint      |10         |
-14  |L14            |Lit    |uint      |10         |20
-15  |entry$dateStr  |Var    |text      |11         |
-16  |entry$len      |Var    |uint      |12         |
-17  |entry$temp     |Var    |uint      |23         |
-18  |L18            |Lit    |uint      |24         |5
-19  |L19            |Lit    |uint      |29         |0
+9   |L9             |Lit    |text      |2          |'a = '
+10  |L10            |Lit    |text      |4          |'b = '
+11  |math$res       |Var    |uint      |6          |
+12  |L12            |Lit    |uint      |8          |2
+13  |entry$x        |Var    |uint      |13         |
+14  |L14            |Lit    |uint      |13         |10
+15  |entry$y        |Var    |uint      |14         |
+16  |L16            |Lit    |uint      |14         |20
+17  |entry$dateStr  |Var    |text      |15         |
+18  |entry$len      |Var    |uint      |16         |
+19  |entry$temp     |Var    |uint      |26         |
+20  |L20            |Lit    |uint      |27         |5
+21  |L21            |Lit    |uint      |34         |0
 
+
+--- Таблица лексем после ПОЛИЗ ---
+---- Таблица лексем ----
+100 tfi(ti,ti){
+200 lp;
+300 ip;
+400 lp;
+500 ip;
+600 dti;
+800 iii+l*il%-=####;
+900 ir;
+100 };
+120 m{
+130 dtil=;
+140 dtil=;
+150 dti;
+160 dti;
+180 ii=##;
+190 iii=##;
+210 ip;
+220 ip;
+230 ip;
+250 ii<w##{
+260 dti;
+270 iili=###;
+280 ip;
+290 iil+=;
+300 };
+340 lr;
+350 };
+Семантический анализ прошел успешно.

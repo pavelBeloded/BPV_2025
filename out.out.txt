@@ -1,0 +1,35 @@
+uint proc math(uint a, uint b) {
+echo 'a = ';
+echo a;
+echo 'b = ';
+echo b;
+ var uint res;
+ // Сложное выражение с приоритетами
+ res = (a + b) * 2 - (a % 2); 
+ ret res;
+};
+
+entry {
+ var uint x = 10;
+ var uint y = 20;
+ var text dateStr;
+ var uint len;
+ // Использование библиотеки
+ dateStr = date();
+ len = length(dateStr);
+ 
+ echo dateStr;
+ echo len;
+echo y;
+ // Цикл и условия
+ while (x < y) {
+ var uint temp;
+ temp = math(x, 5);
+ echo temp;
+ x = x + 2;
+ };
+
+
+
+ ret 0;
+};

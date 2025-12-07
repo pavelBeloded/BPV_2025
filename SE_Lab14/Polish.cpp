@@ -117,7 +117,7 @@ namespace Polish {
 			lextable.table[k].idxTI = LT_TI_NULLIDX;
 		}
 
-		std::cout << "Polish: ";
+		/*std::cout << "Polish: ";
 		for (int k = 0; k < out_index; k++) {
 			LT::Entry e = lextable.table[lextable_pos + k];
 			if (e.lexema == LEX_ID) std::cout << IT::GetEntry(idtable, e.idxTI).id << " ";
@@ -141,7 +141,7 @@ namespace Polish {
 				}
 			}
 		}
-		std::cout << std::endl;
+		std::cout << std::endl;*/
 
 		// Возвращаем индекс, на котором остановились (точка с запятой или скобка)
 		return end_pos;
