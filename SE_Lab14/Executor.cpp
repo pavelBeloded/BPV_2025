@@ -8,7 +8,6 @@
 #include <vector>
 #include <sstream>
 
-// Подключаем функции из Library.cpp
 extern "C" {
 	int   __stdcall str_len(char* s);
 	char* __stdcall tostr(int n);
@@ -27,7 +26,7 @@ namespace Executor {
 			int i_val;
 			char s_val[255];
 		};
-		int var_idx = -1; // Если >= 0, то это ссылка на переменную (L-Value)
+		int var_idx = -1;          
 	};
 
 	struct StackFrame {
@@ -35,7 +34,6 @@ namespace Executor {
 		size_t stackSize;
 	};
 
-	// Формирование строки состояния стека для лога
 	std::string DumpStack(const std::vector<Value>& debugStack, IT::IdTable& idtable) {
 		std::stringstream ss;
 		ss << "   Stack [" << debugStack.size() << "]: ";
@@ -61,7 +59,6 @@ namespace Executor {
 		while (ip < code.size()) {
 			CodeGen::Instruction& instr = code[ip];
 
-			// --- ЛОГИРОВАНИЕ ТЕКУЩЕЙ ИНСТРУКЦИИ ---
 			std::stringstream ss;
 			ss << "[IP:" << std::setw(3) << ip << "] ";
 			switch (instr.op) {
@@ -93,7 +90,6 @@ namespace Executor {
 						ss << " " << IT::GetEntry(idtable, (int)instr.target).id;
 					}
 					else if (instr.op == CodeGen::CMD_PUSH || instr.op == CodeGen::CMD_POP) {
-						// Для POP -1 (ASSIGN) имя не пишем
 						if ((int)instr.target != -1)
 							ss << " " << IT::GetEntry(idtable, (int)instr.target).id;
 					}
@@ -104,12 +100,8 @@ namespace Executor {
 				ss << " -> " << instr.target;
 			}
 
-			// Пишем инструкцию в лог
 			Log::WriteLine(log, ss.str().c_str(), nullptr);
-			// Пишем состояние стека в лог
 			Log::WriteLine(log, DumpStack(stack, idtable).c_str(), nullptr);
-			// -------------------------------------
-
 			switch (instr.op) {
 
 			case CodeGen::CMD_PUSH: {
@@ -124,7 +116,6 @@ namespace Executor {
 					v.var_idx = -1;
 				}
 				else {
-					// Переменная: берем текущее значение из таблицы
 					if (e.iddatatype == IT::INT) v.i_val = e.value.vint;
 					else strcpy_s(v.s_val, e.value.vstr.str);
 				}
@@ -133,7 +124,6 @@ namespace Executor {
 			}
 
 			case CodeGen::CMD_POP: {
-				// 1. POP в конкретную переменную (параметры функции)
 				if (instr.target != LT_TI_NULLIDX) {
 					if (stack.empty()) throw ERROR_THROW(701);
 					Value val = stack.back(); stack.pop_back();
@@ -145,7 +135,6 @@ namespace Executor {
 						strcpy_s(varEntry.value.vstr.str, val.s_val);
 					}
 				}
-				// 2. ASSIGN (x = y) - на стеке лежат: Значение, Куда_писать
 				else {
 					if (stack.size() < 2) throw ERROR_THROW(701);
 					Value val = stack.back(); stack.pop_back();
@@ -187,7 +176,7 @@ namespace Executor {
 			}
 			case CodeGen::CMD_DIV: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				if (b.i_val == 0) throw ERROR_THROW(1); // Деление на 0 (можно добавить свой код ошибки)
+				if (b.i_val == 0) throw ERROR_THROW(1);         
 				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = a.i_val / b.i_val;
 				stack.push_back(res); break;
 			}
@@ -234,7 +223,6 @@ namespace Executor {
 			case CodeGen::CMD_PRINT: {
 				if (stack.empty()) throw ERROR_THROW(701);
 				Value v = stack.back(); stack.pop_back();
-				// Вывод остается в консоли - это результат работы программы
 				if (v.type == IT::INT) std::cout << v.i_val << std::endl;
 				else std::cout << v.s_val << std::endl;
 				break;
@@ -261,11 +249,10 @@ namespace Executor {
 				if (hasRet) {
 					retVal = stack.back();
 					stack.pop_back();
-					retVal.var_idx = -1; // Разрываем связь с переменной
+					retVal.var_idx = -1;     
 				}
 
 				if (callStack.empty()) {
-					// Конец программы
 					return;
 				}
 
@@ -273,7 +260,6 @@ namespace Executor {
 				callStack.pop();
 				ip = frame.returnIP;
 
-				// Чистим локальный стек
 				while (stack.size() > frame.stackSize) {
 					stack.pop_back();
 				}

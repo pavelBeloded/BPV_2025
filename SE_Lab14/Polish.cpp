@@ -116,7 +116,6 @@ namespace Polish {
 			lextable.table[k].idxTI = LT_TI_NULLIDX;
 		}
 
-		// --- Логирование результата в файл ---
 		std::stringstream ss;
 		ss << "Polish: ";
 		for (int k = 0; k < out_index; k++) {
@@ -149,7 +148,6 @@ namespace Polish {
 			}
 		}
 		Log::WriteLine(log, ss.str().c_str(), nullptr);
-		// -------------------------------------
 
 		return end_pos;
 	}

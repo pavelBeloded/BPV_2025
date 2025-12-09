@@ -29,7 +29,6 @@ namespace Log {
 		va_start(args, c);
 
 		const char* current_str = c;
-		// ВАЖНО: Цикл идет, пока не встретит nullptr
 		while (current_str != nullptr) {
 			*log.stream << current_str;
 			current_str = va_arg(args, const char*);
@@ -110,7 +109,7 @@ namespace Log {
 	}
 
 	void WriteIT(LOG log, IT::IdTable& idtable) {
-		if (!log.stream || !log.stream->is_open()) return; // ДОБАВЛЕНА ПРОВЕРКА
+		if (!log.stream || !log.stream->is_open()) return;   
 		outfile << "---- Таблица идентификаторов ----" << std::endl;
 		outfile << std::left << std::setw(4) << "No" << "|" << std::setw(15) << "ID" << "|" << std::setw(7) << "Type" << "|" << std::setw(10) << "DataType" << "|" << std::setw(11) << "Idx" << "|" << "Value" << std::endl;
 		outfile << std::setfill('-') << std::setw(60) << "-" << std::setfill(' ') << std::endl;
@@ -132,7 +131,7 @@ namespace Log {
 	}
 
 	void WriteLT(LOG log, LT::LexTable& lextable) {
-		if (!log.stream || !log.stream->is_open()) return; // ДОБАВЛЕНА ПРОВЕРКА
+		if (!log.stream || !log.stream->is_open()) return;   
 		outfile << "---- Таблица лексем ----" << std::endl;
 		int size = lextable.size;
 		int lastLine = -1;

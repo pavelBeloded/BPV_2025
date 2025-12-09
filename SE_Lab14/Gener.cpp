@@ -8,10 +8,10 @@
 namespace Gener
 {
 	enum StackItemType {
-		ITEM_INT_VAL,   // Значение (5)
-		ITEM_INT_ADDR,  // Адрес переменной (offset x)
-		ITEM_STR_VAL,   // Указатель на строку (результат функции)
-		ITEM_STR_ADDR   // Адрес переменной-указателя (offset s)
+		ITEM_INT_VAL,     
+		ITEM_INT_ADDR,      
+		ITEM_STR_VAL,        
+		ITEM_STR_ADDR       
 	};
 
 	std::stack<StackItemType> stack_state;
@@ -54,18 +54,15 @@ namespace Gener
 			if (id.table[i].idtype == IT::F || id.table[i].idtype == IT::P)
 				continue;
 
-			// Объявляем и строки, и числа
 			if (id.table[i].iddatatype == IT::STR)
 			{
 				std::string val = id.table[i].value.vstr.str;
 				std::replace(val.begin(), val.end(), '\"', '\'');
 
-				// 1. Сами данные
 				*stream << "\t" << id.table[i].id << "_s db \"" << val << "\", 0\n";
-				// 2. Указатель на данные
 				*stream << "\t" << id.table[i].id << " dd " << id.table[i].id << "_s\n";
 			}
-			else // INT
+			else  
 			{
 				*stream << "\t" << id.table[i].id << " dd " << id.table[i].value.vint << "\n";
 			}
@@ -76,7 +73,6 @@ namespace Gener
 	{
 		*stream << "\n.code\n";
 
-		// --- PRINT STRING ---
 		*stream << "\nprint_str PROC uses eax ebx ecx edx, pstr:DWORD\n";
 		*stream << "\tpush -11\n";
 		*stream << "\tcall GetStdHandle\n";
@@ -98,11 +94,10 @@ namespace Gener
 		*stream << "\tret\n";
 		*stream << "print_str ENDP\n";
 
-		// --- PRINT NUMBER (DECIMAL) ---
 		*stream << "\noutnum PROC uses eax ebx ecx edx, number:DWORD\n";
 		*stream << "\tmov eax, number\n";
 		*stream << "\tmov ecx, 0\n";
-		*stream << "\tmov ebx, 10\n";      // Вывод в 10-чной системе
+		*stream << "\tmov ebx, 10\n";          
 		*stream << "div_loop:\n";
 		*stream << "\txor edx, edx\n";
 		*stream << "\tdiv ebx\n";
@@ -146,14 +141,12 @@ namespace Gener
 						stack_state.push(ITEM_INT_VAL);
 					}
 					else {
-						// Для строкового литерала пушим значение его переменной-указателя
 						*stream << "push " << e.id << "\n";
 						stack_state.push(ITEM_STR_VAL);
 					}
 				}
 				else
 				{
-					// Переменная: пушим адрес
 					*stream << "push offset " << e.id << "\n";
 					if (e.iddatatype == IT::INT) stack_state.push(ITEM_INT_ADDR);
 					else stack_state.push(ITEM_STR_ADDR);
@@ -163,16 +156,15 @@ namespace Gener
 
 			case CodeGen::CMD_POP:
 			{
-				if (instr.target == LT_TI_NULLIDX) // ASSIGN
+				if (instr.target == LT_TI_NULLIDX)  
 				{
 					StackItemType r_type = stack_state.top(); stack_state.pop();
 					*stream << "pop eax\n";
-					// Разыменовываем адреса
 					if (r_type == ITEM_INT_ADDR || r_type == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
 					StackItemType l_type = stack_state.top(); stack_state.pop();
 					*stream << "pop ebx\n";
-					*stream << "mov [ebx], eax\n"; // Пишем по адресу
+					*stream << "mov [ebx], eax\n";    
 					*stream << "push eax\n";
 
 					if (r_type == ITEM_STR_VAL || r_type == ITEM_STR_ADDR) stack_state.push(ITEM_STR_VAL);
@@ -244,7 +236,6 @@ namespace Gener
 
 				if (type == ITEM_STR_VAL || type == ITEM_STR_ADDR)
 				{
-					// Если это адрес переменной-строки, берем значение (указатель)
 					if (type == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 					*stream << "invoke print_str, eax\n";
 				}
@@ -296,25 +287,22 @@ namespace Gener
 					*stream << "push eax\n";
 				}
 				else if (args_count == 3) {
-					// --- ВОТ ТУТ БЫЛА ОШИБКА ---
-					// Стек: [len, start, str] (верх -> низ)
-					StackItemType t3 = stack_state.top(); stack_state.pop(); // len
-					StackItemType t2 = stack_state.top(); stack_state.pop(); // start
-					StackItemType t1 = stack_state.top(); stack_state.pop(); // str
+					StackItemType t3 = stack_state.top(); stack_state.pop();  
+					StackItemType t2 = stack_state.top(); stack_state.pop();  
+					StackItemType t1 = stack_state.top(); stack_state.pop();  
 
-					*stream << "pop ecx\n"; // len
+					*stream << "pop ecx\n";  
 					if (t3 == ITEM_INT_ADDR) *stream << "mov ecx, [ecx]\n";
 
-					*stream << "pop ebx\n"; // start
+					*stream << "pop ebx\n";  
 					if (t2 == ITEM_INT_ADDR) *stream << "mov ebx, [ebx]\n";
 
-					*stream << "pop eax\n"; // str
+					*stream << "pop eax\n";  
 					if (t1 == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
-					// Теперь пушим для stdcall (справа налево): len, start, str
-					*stream << "push ecx\n"; // len
-					*stream << "push ebx\n"; // start
-					*stream << "push eax\n"; // str
+					*stream << "push ecx\n";  
+					*stream << "push ebx\n";  
+					*stream << "push eax\n";  
 				}
 
 				*stream << "call " << fname << "\n";

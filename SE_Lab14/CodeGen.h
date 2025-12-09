@@ -1,7 +1,7 @@
 #pragma once
 #include "LT.h"
 #include "IT.h"
-#include "Log.h" // Добавляем для вывода в файл
+#include "Log.h"
 #include <vector>
 #include <string>
 

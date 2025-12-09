@@ -5,20 +5,17 @@
 #define LT_MAXSIZE 4096
 #define LT_TI_NULLIDX 0xfffffff
 
-// --- Новые ключевые слова (семантически совпадают со старыми) ---
-#define LEX_TYPE		't'  // uint, text (было integer, string)
+#define LEX_TYPE		't'       
 #define LEX_ID			'i'
 #define LEX_LITERAL		'l'
-#define LEX_FUNCTION	'f'  // proc (было function)
-#define LEX_DECLARE		'd'  // var (было declare)
-#define LEX_RETURN		'r'  // ret (было return)
-#define LEX_PRINT		'p'  // echo (было print)
-#define LEX_MAIN		'm'  // entry (было main)
+#define LEX_FUNCTION	'f'     
+#define LEX_DECLARE		'd'     
+#define LEX_RETURN		'r'     
+#define LEX_PRINT		'p'     
+#define LEX_MAIN		'm'     
 
-// --- Новые конструкции для курсового ---
-#define LEX_WHILE       'w'  // while
+#define LEX_WHILE       'w'   
 
-// --- Разделители ---
 #define LEX_SEMICOLON	';'
 #define LEX_COMMA		','
 #define LEX_LEFTBRACE	'{'
@@ -26,27 +23,23 @@
 #define LEX_LEFTHESIS	'('
 #define LEX_RIGHTHESIS	')'
 
-// --- Арифметические операции (уникальные коды!) ---
 #define LEX_PLUS		'+'
 #define LEX_MINUS		'-'
 #define LEX_STAR		'*'
 #define LEX_DIRSLASH	'/'
-#define LEX_MODULO      '%'  // Остаток от деления (стандарт для uint)
+#define LEX_MODULO      '%'        
 
-// --- Операции присваивания и сравнения ---
-#define LEX_ASSIGN		'='  // =
-#define LEX_EQ			'e'  // == (equal)
-#define LEX_NE			'n'  // != (not equal)
-#define LEX_LESS		'<'  // <
-#define LEX_MORE		'>'  // >
-#define LEX_LE			'1'  // <= (less equal)
-#define LEX_GE			'2'  // >= (greater equal)
+#define LEX_ASSIGN		'='   
+#define LEX_EQ			'e'    
+#define LEX_NE			'n'     
+#define LEX_LESS		'<'   
+#define LEX_MORE		'>'   
+#define LEX_LE			'1'     
+#define LEX_GE			'2'     
 
 #define KEYWORD_MAX_LEN 10
-#define KEYWORDS_COUNT 8      // Было 7, добавился while
+#define KEYWORDS_COUNT 8          
 #define SEPARATORS_COUNT 6
-// Operations count убираем из define, так как проверка будет сложнее
-
 namespace LT {
 
 	struct Keyword {

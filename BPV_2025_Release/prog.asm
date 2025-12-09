@@ -34,9 +34,9 @@ sub_str PROTO :DWORD, :DWORD, :DWORD
 	entry$temp_s_s db "55", 0
 	entry$temp_s dd entry$temp_s_s
 	entry$temp_n dd 60
-	entry$d_s db "08.12.2025", 0
+	entry$d_s db "09.12.2025", 0
 	entry$d dd entry$d_s
-	entry$t_s db "00:40:02", 0
+	entry$t_s db "15:29:36", 0
 	entry$t dd entry$t_s
 	L14_s db "--- Standard Library Test ---", 0
 	L14 dd L14_s

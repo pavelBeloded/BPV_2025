@@ -8,7 +8,6 @@
 #include <new>
 #include <iostream>
 
-// Ключевые слова
 LT::Keyword keywords[KEYWORDS_COUNT]{
 	{"text",	LEX_TYPE},
 	{"uint",	LEX_TYPE},
@@ -66,8 +65,7 @@ namespace LT {
 
 		IT::IDDATATYPE lastDataType = IT::UNKNOWN;
 
-		// --- НОВОЕ: Текущая область видимости ---
-		std::string currentScope = "global"; // По умолчанию
+		std::string currentScope = "global";   
 
 		bool nextIsFunctionName = false;
 		bool isInsideString = false;
@@ -80,19 +78,18 @@ namespace LT {
 
 			char lexem = getKeywordLexem(word);
 			if (lexem) {
-				// Ключевое слово
 				Add(lextable, { lexem, line, LT_TI_NULLIDX });
 
 				if (lexem == LEX_DECLARE)
 					contextStack.push_back(Context::DECLARE_SECTION);
 
-				else if (lexem == LEX_FUNCTION) { // proc
+				else if (lexem == LEX_FUNCTION) {  
 					contextStack.push_back(Context::FUNCTION_DECLARATION);
 					nextIsFunctionName = true;
 				}
 
-				else if (lexem == LEX_MAIN) { // entry
-					currentScope = "entry"; // Входим в scope entry
+				else if (lexem == LEX_MAIN) {  
+					currentScope = "entry";     
 				}
 
 				else if (word == "text") lastDataType = IT::STR;
@@ -101,7 +98,7 @@ namespace LT {
 			else if (isNumericLiteral(word)) {
 				int value = 0;
 				if (word.length() > 1 && word[0] == '0') {
-					try { value = std::stoi(word, nullptr, 8); } // Восьмеричное
+					try { value = std::stoi(word, nullptr, 8); }  
 					catch (...) { throw ERROR_THROW(116); }
 				}
 				else {
@@ -119,48 +116,33 @@ namespace LT {
 				IT::IDTYPE idType = IT::V;
 				Context currentContext = contextStack.back();
 
-				// Логика определения типа и скоупа
 				if (nextIsFunctionName) {
 					idType = IT::F;
 					nextIsFunctionName = false;
-					currentScope = word; // Имя функции становится текущим скоупом
-					// Функции добавляем БЕЗ префикса (они глобальны)
+					currentScope = word;      
 					int idx = IT::AddId(idtable, word, lastDataType, idType, line);
 					Add(lextable, { LEX_ID, line, idx });
 				}
 				else {
-					// Это параметр или переменная
 					if (currentContext == Context::PARAMETER_LIST) idType = IT::P;
 
-					// Формируем имя с префиксом: "scope$id"
-					// Например: summa$x или entry$y
 					std::string scopedName = currentScope + "$" + word;
 
-					// --- ЛОГИКА ПОИСКА/ДОБАВЛЕНИЯ ---
-
-					// 1. Если мы в секции объявления (var или параметры) -> Создаем новую
 					if (currentContext == Context::DECLARE_SECTION || currentContext == Context::PARAMETER_LIST) {
-						// Проверяем, нет ли дубликата в текущем скоупе
 						if (IT::IsId(idtable, scopedName) != TI_NULLIDX) {
-							// Ошибка: повторное объявление (можно кинуть error, но пока просто найдем)
 						}
 						int idx = IT::AddId(idtable, scopedName, lastDataType, idType, line);
 						Add(lextable, { LEX_ID, line, idx });
 					}
-					// 2. Если мы используем переменную (x = ...)
 					else {
-						// Сначала ищем локальную (summa$x)
 						int idx = IT::IsId(idtable, scopedName);
 
 						if (idx == TI_NULLIDX) {
-							// Если локальной нет, ищем глобальную (имя функции для рекурсии или вызова)
 							idx = IT::IsId(idtable, word);
 						}
 
 						if (idx == TI_NULLIDX) {
-							// Если переменная не объявлена - это семантическая ошибка.
-							// В рамках лабы лексера можно либо кинуть ошибку, либо добавить как новую (но лучше ошибку)
-							throw ERROR_THROW_IN(301, line, 0); // Ошибка: Необъявленный идентификатор
+							throw ERROR_THROW_IN(301, line, 0);    
 						}
 
 						Add(lextable, { LEX_ID, line, idx });
@@ -245,7 +227,6 @@ namespace LT {
 		processWord();
 	}
 
-	// Остальные функции без изменений...
 	LexTable Create(int size) {
 		if (size <= 0 || size > LT_MAXSIZE) throw ERROR_THROW(211);
 		return LexTable{ size, 0, new Entry[size] };

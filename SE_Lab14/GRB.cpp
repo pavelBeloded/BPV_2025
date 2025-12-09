@@ -8,34 +8,23 @@ namespace GRB {
 
 	Greibach greibach(NS('S'), TS('$'),
 		{
-			// S - Стартовое правило
-			// Теперь здесь 6 цепочек, покрывающих все случаи
 			Rule(NS('S'), GRB_ERROR_SERIES + 0,
 			6,
-			// 1. entry { N ret E ; } ;  (Точка входа с телом)
 			Rule::Chain(8, TS('m'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';')),
 
-			// 2. entry { ret E ; } ;    (Точка входа БЕЗ тела, сразу возврат)
 			Rule::Chain(7, TS('m'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';')),
 
-			// 3. proc func(F) { N ret E; }; S  (Функция с ПАРАМЕТРАМИ и ТЕЛОМ)
 			Rule::Chain(14, TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
 
-			// 4. proc func(F) { ret E; }; S    (Функция с ПАРАМЕТРАМИ, но БЕЗ ТЕЛА)
 			Rule::Chain(13, TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
 
-			// 5. proc func() { N ret E; }; S   (Функция БЕЗ ПАРАМЕТРОВ, с ТЕЛОМ)
 			Rule::Chain(13, TS('t'), TS('f'), TS('i'), TS('('), TS(')'), TS('{'), NS('N'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S')),
 
-			// 6. proc func() { ret E; }; S     (Функция БЕЗ ПАРАМЕТРОВ и БЕЗ ТЕЛА)
 			Rule::Chain(12, TS('t'), TS('f'), TS('i'), TS('('), TS(')'), TS('{'), TS('r'), NS('E'), TS(';'), TS('}'), TS(';'), NS('S'))
 		),
 
-				// N - Операторы
-				// 14 цепочек: присваивание, объявление, вызов, while, echo
 				Rule(NS('N'), GRB_ERROR_SERIES + 1,
 				14,
-					// --- Одиночные операторы ---
 					Rule::Chain(4, TS('d'), TS('t'), TS('i'), TS(';')),				// var type id;
 					Rule::Chain(4, TS('i'), TS('='), NS('E'), TS(';')),				// id = expr;
 					Rule::Chain(3, TS('r'), NS('E'), TS(';')),						// ret expr;
@@ -45,10 +34,9 @@ namespace GRB {
 					// while ( E ) { N };
 					Rule::Chain(8, TS('w'), TS('('), NS('E'), TS(')'), TS('{'), NS('N'), TS('}'), TS(';')),
 
-					// declare func (прототипы внутри N, если нужно)
+					// declare func
 					Rule::Chain(8, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';')),
 
-					// --- Операторы с продолжением (N) ---
 					Rule::Chain(5, TS('d'), TS('t'), TS('i'), TS(';'), NS('N')),	// var... N
 					Rule::Chain(5, TS('i'), TS('='), NS('E'), TS(';'), NS('N')),	// id=... N
 					Rule::Chain(4, TS('r'), NS('E'), TS(';'), NS('N')),				// ret... N
@@ -62,28 +50,25 @@ namespace GRB {
 					Rule::Chain(9, TS('d'), TS('t'), TS('f'), TS('i'), TS('('), NS('F'), TS(')'), TS(';'), NS('N'))
 				),
 
-				// E - Выражения (9 цепочек)
 				Rule(NS('E'), GRB_ERROR_SERIES + 2,
 				9,
 					Rule::Chain(1, TS('i')),									// id
 					Rule::Chain(1, TS('l')),									// literal
 					Rule::Chain(3, TS('('), NS('E'), TS(')')),					// (E)
 					Rule::Chain(4, TS('i'), TS('('), NS('W'), TS(')')),			// id(args)
-					Rule::Chain(3, TS('i'), TS('('), TS(')')),					// id() -- ВЫЗОВ БЕЗ АРГУМЕНТОВ
+					Rule::Chain(3, TS('i'), TS('('), TS(')')),					// id()
 					Rule::Chain(2, TS('i'), NS('M')),							// id + ...
 					Rule::Chain(2, TS('l'), NS('M')),							// literal + ...
 					Rule::Chain(4, TS('('), NS('E'), TS(')'), NS('M')),			// (E) + ...
 					Rule::Chain(5, TS('i'), TS('('), NS('W'), TS(')'), NS('M'))	// id(args) + ...
 				),
 
-				// F - Параметры объявления (2 цепочки)
 				Rule(NS('F'), GRB_ERROR_SERIES + 3,
 				 2,
 					Rule::Chain(2, TS('t'), TS('i')),				// type id
 					Rule::Chain(4, TS('t'), TS('i'), TS(','), NS('F')) // type id, ...
 				),
 
-				// W - Аргументы вызова (4 цепочки)
 				Rule(NS('W'), GRB_ERROR_SERIES + 4,
 				 4,
 					Rule::Chain(1, TS('i')),					// id
@@ -92,7 +77,6 @@ namespace GRB {
 					Rule::Chain(3, TS('l'), TS(','), NS('W'))	// literal, ...
 				),
 
-				// M - Хвост выражения (22 цепочки)
 				Rule(NS('M'), GRB_ERROR_SERIES + 2,
 				22,
 					// Арифметика
@@ -178,19 +162,6 @@ namespace GRB {
 
 		return b;
 	}
-
-	//short Rule::getNextChain(GRBALPHABET t, Rule::Chain& pchain, short j)
-	//{
-	//	short rc = -1;
-
-	//	while (j < this->size && this->chains[j].nt[0] != t)
-	//		j++;
-
-	//	rc = (j < this->size ? j : -1);
-	//	if (rc >= 0)
-	//		pchain = chains[rc];
-	//	return rc;
-	//}
 
 	short Rule::getNextChain(GRBALPHABET t, Chain& pchain, short j) {
 		short rc = -1;

@@ -1,4 +1,4 @@
------  Протокол ----- 2025-12-08 00:40:02------
+-----  Протокол ----- 2025-12-09 15:29:36------
 ----- Параметры -----
 -log: log.txt
 -in : in.txt
@@ -2223,7 +2223,7 @@ Polish: 0 ret
 [IP: 12] CALL LIB date
    Stack [1]: {entry$d} 
 [IP: 13] POP
-   Stack [2]: {entry$d} '08.12.2025' 
+   Stack [2]: {entry$d} '09.12.2025' 
 [IP: 14] PUSH L16
    Stack [0]: 
 [IP: 15] PRINT
@@ -2241,7 +2241,7 @@ Polish: 0 ret
 [IP: 21] CALL LIB time
    Stack [1]: {entry$t} 
 [IP: 22] POP
-   Stack [2]: {entry$t} '00:40:02' 
+   Stack [2]: {entry$t} '15:29:36' 
 [IP: 23] PUSH L18
    Stack [0]: 
 [IP: 24] PRINT

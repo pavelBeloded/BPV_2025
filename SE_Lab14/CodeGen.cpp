@@ -22,7 +22,7 @@ namespace CodeGen {
 		size_t entryPoint = 0;
 		size_t currentStatementStart = 0;
 
-		code.push_back({ CMD_JMP, 0 }); // Заглушка для прыжка на entry
+		code.push_back({ CMD_JMP, 0 });
 
 		for (int i = 0; i < lextable.size; i++) {
 			LT::Entry entry = lextable.table[i];
@@ -49,12 +49,10 @@ namespace CodeGen {
 						}
 					}
 
-					// POP параметров в обратном порядке
 					for (int k = (int)paramIndices.size() - 1; k >= 0; k--) {
 						code.push_back({ CMD_POP, (size_t)paramIndices[k] });
 					}
 
-					// Пропускаем параметры до тела функции
 					while (i + 1 < lextable.size) {
 						if (lextable.table[i + 1].lexema == LEX_LEFTBRACE) break;
 						i++;

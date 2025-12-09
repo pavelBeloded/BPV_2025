@@ -173,7 +173,6 @@ namespace MFST {
 			ss << "Всего строк " << lextable.table[lextable.size - 1].sn << ", синтаксический анализ выполнен без ошибок";
 			Log::WriteLine(log, ss.str().c_str(), nullptr);
 
-			//std::cout << "\nСинтаксический анализ: OK" << std::endl;
 
 			rc = true;
 			break;
