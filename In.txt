@@ -1,7 +1,5 @@
 entry {
-    var text st;
-st = substr('Hello World', 6,4);
-echo 44;
-echo st;
+    var uifefnt x;
+var uint t;
 ret 0;
 };

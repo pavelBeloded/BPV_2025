@@ -23,7 +23,9 @@ namespace Error {
 		ERROR_ENTRY(114, "Недопустимый символ (лексическая ошибка)"),
 		ERROR_ENTRY(115, "Недопустимый литерал"),
 		ERROR_ENTRY(116, "Ошибка в записи литерала"),
-		ERROR_ENTRY_NODEF(117), ERROR_ENTRY_NODEF(118), ERROR_ENTRY_NODEF(119),
+		ERROR_ENTRY(117, "Идентификатор не может начинаться с цифры"),
+		ERROR_ENTRY(118, "Пустой символьный/строковый литерал"),
+		ERROR_ENTRY(119, "Незакрытая строковая константа"),
 		ERROR_ENTRY_NODEF10(120), ERROR_ENTRY_NODEF10(130), ERROR_ENTRY_NODEF10(140), ERROR_ENTRY_NODEF10(150),
 		ERROR_ENTRY_NODEF10(160), ERROR_ENTRY_NODEF10(170), ERROR_ENTRY_NODEF10(180), ERROR_ENTRY_NODEF10(190),
 
@@ -54,8 +56,12 @@ namespace Error {
 		ERROR_ENTRY(304, "Использование функции как переменной"),
 		ERROR_ENTRY(305, "Отсутствует точка входа (entry)"),
 		ERROR_ENTRY(306, "Неверное количество аргументов функции"),
-		ERROR_ENTRY_NODEF(307), ERROR_ENTRY_NODEF(308), ERROR_ENTRY_NODEF(309),
-		ERROR_ENTRY_NODEF10(310), ERROR_ENTRY_NODEF10(320), ERROR_ENTRY_NODEF10(330), ERROR_ENTRY_NODEF10(340),
+		ERROR_ENTRY(307, "Оператор break вне цикла"),
+		ERROR_ENTRY(308, "Функция возвращает неверный тип данных"),
+		ERROR_ENTRY(309, "Деление на ноль (константное выражение)"),
+		ERROR_ENTRY(310, "Дублирование точки входа (entry)"),
+		ERROR_ENTRY(311, "Отсутствует тело функции или пустой блок"),
+		ERROR_ENTRY_NODEF(312), ERROR_ENTRY_NODEF(313), ERROR_ENTRY_NODEF(314), ERROR_ENTRY_NODEF(315),ERROR_ENTRY_NODEF(316),ERROR_ENTRY_NODEF(317),ERROR_ENTRY_NODEF(318), ERROR_ENTRY_NODEF(319), ERROR_ENTRY_NODEF10(320), ERROR_ENTRY_NODEF10(330), ERROR_ENTRY_NODEF10(340),
 		ERROR_ENTRY_NODEF10(350), ERROR_ENTRY_NODEF10(360), ERROR_ENTRY_NODEF10(370), ERROR_ENTRY_NODEF10(380), ERROR_ENTRY_NODEF10(390),
 
 		// --- 400-599 (ПУСТОТА) ---

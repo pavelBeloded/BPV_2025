@@ -8,6 +8,7 @@
 #include <new>
 #include <iostream>
 
+// Константы и массивы keywords/separators должны быть согласованы с LT.h (KEYWORDS_COUNT=8)
 LT::Keyword keywords[KEYWORDS_COUNT]{
 	{"text",	LEX_TYPE},
 	{"uint",	LEX_TYPE},
@@ -28,7 +29,8 @@ LT::Separator separators[SEPARATORS_COUNT]{
 namespace LT {
 
 	bool isId(const std::string& word) {
-		if (word.empty() || !isalpha(word[0])) return false;
+		if (word.empty()) return false;
+		if (isdigit(word[0])) return false; // ID не может начинаться с цифры
 		for (char c : word) {
 			if (!isalnum(c) && c != '_') return false;
 		}
@@ -64,11 +66,9 @@ namespace LT {
 		contextStack.push_back(Context::GLOBAL);
 
 		IT::IDDATATYPE lastDataType = IT::UNKNOWN;
-
-		std::string currentScope = "global";   
-
+		std::string currentScope = "global";
+		bool entryDefined = false;
 		bool nextIsFunctionName = false;
-		bool isInsideString = false;
 
 		std::string word = "";
 		int line = 1;
@@ -77,106 +77,130 @@ namespace LT {
 			if (word.empty()) return;
 
 			char lexem = getKeywordLexem(word);
+
+			// 1. Ключевые слова
 			if (lexem) {
 				Add(lextable, { lexem, line, LT_TI_NULLIDX });
 
 				if (lexem == LEX_DECLARE)
 					contextStack.push_back(Context::DECLARE_SECTION);
-
-				else if (lexem == LEX_FUNCTION) {  
+				else if (lexem == LEX_FUNCTION) {
 					contextStack.push_back(Context::FUNCTION_DECLARATION);
 					nextIsFunctionName = true;
 				}
-
-				else if (lexem == LEX_MAIN) {  
-					currentScope = "entry";     
+				else if (lexem == LEX_MAIN) {
+					if (entryDefined) throw ERROR_THROW_IN(310, line, 0);
+					entryDefined = true;
+					currentScope = "entry";
 				}
-
 				else if (word == "text") lastDataType = IT::STR;
 				else if (word == "uint") lastDataType = IT::INT;
 			}
+			// 2. Числовые литералы
 			else if (isNumericLiteral(word)) {
 				int value = 0;
 				if (word.length() > 1 && word[0] == '0') {
-					try { value = std::stoi(word, nullptr, 8); }  
-					catch (...) { throw ERROR_THROW(116); }
+					for (char c : word) {
+						if (c == '8' || c == '9') throw ERROR_THROW_IN(116, line, 0);
+					}
+					try { value = std::stoi(word, nullptr, 8); }
+					catch (...) { throw ERROR_THROW_IN(116, line, 0); }
 				}
 				else {
-					value = std::stoi(word);
+					try { value = std::stoi(word); }
+					catch (...) { throw ERROR_THROW_IN(116, line, 0); }
 				}
 				int idx = IT::AddIntLiteral(idtable, value, line);
 				Add(lextable, { LEX_LITERAL, line, idx });
 			}
+			// 3. Строковые литералы (попадают сюда уже готовыми из внешнего цикла)
 			else if (isStringLiteral(word)) {
 				std::string literalContent = word.substr(1, word.length() - 2);
 				int idx = IT::AddStringLiteral(idtable, literalContent, line);
 				Add(lextable, { LEX_LITERAL, line, idx });
 			}
+			// 4. Идентификаторы
 			else if (isId(word)) {
+				if (word.length() > ID_MAXSIZE) throw ERROR_THROW_IN(104, line, 0);
+
 				IT::IDTYPE idType = IT::V;
 				Context currentContext = contextStack.back();
 
 				if (nextIsFunctionName) {
 					idType = IT::F;
 					nextIsFunctionName = false;
-					currentScope = word;      
+					currentScope = word;
+
+					// Проверка повторного объявления функции
+					if (IT::IsId(idtable, word) != TI_NULLIDX) throw ERROR_THROW_IN(302, line, 0);
+
 					int idx = IT::AddId(idtable, word, lastDataType, idType, line);
 					Add(lextable, { LEX_ID, line, idx });
 				}
 				else {
 					if (currentContext == Context::PARAMETER_LIST) idType = IT::P;
-
 					std::string scopedName = currentScope + "$" + word;
 
 					if (currentContext == Context::DECLARE_SECTION || currentContext == Context::PARAMETER_LIST) {
+						// Проверка повторного объявления переменной в текущем скоупе
 						if (IT::IsId(idtable, scopedName) != TI_NULLIDX) {
+							throw ERROR_THROW_IN(302, line, 0); // <--- ОШИБКА 302
 						}
 						int idx = IT::AddId(idtable, scopedName, lastDataType, idType, line);
 						Add(lextable, { LEX_ID, line, idx });
 					}
 					else {
 						int idx = IT::IsId(idtable, scopedName);
-
-						if (idx == TI_NULLIDX) {
-							idx = IT::IsId(idtable, word);
-						}
-
-						if (idx == TI_NULLIDX) {
-							throw ERROR_THROW_IN(301, line, 0);    
-						}
-
+						if (idx == TI_NULLIDX) idx = IT::IsId(idtable, word);
+						if (idx == TI_NULLIDX) throw ERROR_THROW_IN(301, line, 0);
 						Add(lextable, { LEX_ID, line, idx });
 					}
+				}
+			}
+			// 5. Неизвестная лексема (Ошибка)
+			else {
+				// Если начинается с цифры, но содержит буквы (например 1var)
+				if (isdigit(word[0])) { throw ERROR_THROW_IN(117, line, 0);
+			}
+				else {throw ERROR_THROW_IN(114, line, 0);
 				}
 			}
 			word.clear();
 			};
 
+		// --- ЦИКЛ ПО СИМВОЛАМ ---
 		for (int i = 0; i < in.size; ++i) {
 			unsigned char c = in.text[i];
 			unsigned char next_c = (i + 1 < in.size) ? in.text[i + 1] : 0;
+
+			// Комментарии
 			if (c == '/' && next_c == '/') {
-				while (i < in.size && in.text[i] != '\n') {
-					i++;
-				}
+				while (i < in.size && in.text[i] != '\n') i++;
 				processWord();
 				line++;
 				continue;
 			}
-			if (isInsideString) {
-				word += c;
-				if (c == '\'') {
-					isInsideString = false;
-					processWord();
-				}
-				continue;
-			}
+
+			// Строковые литералы
 			if (c == '\'') {
 				processWord();
-				isInsideString = true;
+				int strLine = line;
 				word += c;
+				i++;
+				while (i < in.size && in.text[i] != '\'') {
+					if (in.text[i] == '\n') throw ERROR_THROW_IN(119, strLine, 0);
+					word += in.text[i];
+					i++;
+				}
+				if (i >= in.size) throw ERROR_THROW_IN(119, strLine, 0);
+				word += '\'';
+				if (word.length() <= 2) throw ERROR_THROW_IN(118, strLine, 0);
+
+				// Вызываем processWord для готовой строки, она попадет в ветку isStringLiteral
+				processWord();
 				continue;
 			}
+
 			if (isspace(c)) {
 				processWord();
 				if (c == '\n') line++;
@@ -211,7 +235,16 @@ namespace LT {
 			else if (c == '*') opLexem = LEX_STAR;
 			else if (c == '/') opLexem = LEX_DIRSLASH;
 			else if (c == '%') opLexem = LEX_MODULO;
-			else if (c == '=') { if (next_c == '=') { opLexem = LEX_EQ; doubleChar = true; } else opLexem = LEX_ASSIGN; }
+			else if (c == '=') {
+				if (next_c == '=') { opLexem = LEX_EQ; doubleChar = true; }
+				else {
+					opLexem = LEX_ASSIGN;
+					// Выход из секции объявления при инициализации (var int x = ...)
+					if (!contextStack.empty() && contextStack.back() == Context::DECLARE_SECTION) {
+						contextStack.pop_back();
+					}
+				}
+			}
 			else if (c == '!') { if (next_c == '=') { opLexem = LEX_NE; doubleChar = true; } }
 			else if (c == '<') { if (next_c == '=') { opLexem = LEX_LE; doubleChar = true; } else opLexem = LEX_LESS; }
 			else if (c == '>') { if (next_c == '=') { opLexem = LEX_GE; doubleChar = true; } else opLexem = LEX_MORE; }
@@ -222,6 +255,7 @@ namespace LT {
 				if (doubleChar) i++;
 				continue;
 			}
+
 			word += c;
 		}
 		processWord();

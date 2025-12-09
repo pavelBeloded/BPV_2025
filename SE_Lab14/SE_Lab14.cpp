@@ -53,6 +53,9 @@ int wmain(int argc, wchar_t* argv[]) {
 		}
 		if (!polish_ok) throw ERROR_THROW(700);
 
+		Log::WriteLT(log, lextable);
+
+
 		Log::WriteLine(log, "\n--- Семантический анализ ---", nullptr);
 		if (Semantics::Analyze(lextable, idtable, log)) {
 			Log::WriteLine(log, "Семантический анализ прошел успешно.", nullptr);
