@@ -36,7 +36,7 @@ int wmain(int argc, wchar_t* argv[]) {
 
 		mfst.savededucation();
 		mfst.printrules();
-
+		Semantics::CheckParamCount(lextable, idtable);
 		Log::WriteLine(log, "\n--- Построение ПОЛИЗ ---", nullptr);
 		bool polish_ok = true;
 		for (int i = 0; i < lextable.size; i++) {

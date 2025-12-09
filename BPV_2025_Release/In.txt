@@ -3,6 +3,7 @@ entry {
     var text str = 'Hello World';
     var text temp_s;
     var uint temp_n;
+var uint 11f;
     var text d;
     var text t;
     echo '--- Standard Library Test ---';
@@ -11,7 +12,6 @@ entry {
     d = date();
     echo 'Date:';
     echo d;
-	echo 'hello karina';
     // 2. Тест time()
     t = time();
     echo 'Time:';
@@ -47,7 +47,7 @@ entry {
     
     // Цикл while
     while (num > 2020) {
-        num = num - 1;
+        num = num -1;
         echo num;
     };
 

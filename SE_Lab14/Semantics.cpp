@@ -28,7 +28,29 @@ namespace Semantics {
 			IT::AddId(idtable, func.name, func.returnType, IT::F, 0);
 		}
 	}
+	int GetExpectedParamCount(IT::IdTable& idtable, int funcIdx) {
+		IT::Entry funcEntry = IT::GetEntry(idtable, funcIdx);
+		std::string funcName(funcEntry.id);
 
+		// 1. Проверяем стандартную библиотеку
+		for (const auto& lib : stdLib) {
+			if (lib.name == funcName) return (int)lib.paramTypes.size();
+		}
+
+		// 2. Проверяем пользовательскую функцию
+		// Считаем параметры в таблице идентификаторов (имя_функции$имя_параметра)
+		int count = 0;
+		std::string prefix = funcName + "$";
+		for (int i = 0; i < idtable.size; i++) {
+			if (idtable.table[i].idtype == IT::P) {
+				std::string varName(idtable.table[i].id);
+				if (varName.find(prefix) == 0) {
+					count++;
+				}
+			}
+		}
+		return count;
+	}
 	std::vector<IT::IDDATATYPE> GetFunctionParams(IT::IdTable& idtable, int funcIdx) {
 		if (funcIdx < 0 || funcIdx >= idtable.size) return {};
 
@@ -59,6 +81,82 @@ namespace Semantics {
 			}
 		}
 		return params;
+	}
+
+	void CheckParamCount(LT::LexTable& lextable, IT::IdTable& idtable) {
+		for (int i = 0; i < lextable.size; i++) {
+
+			// Находим идентификатор
+			if (lextable.table[i].lexema == LEX_ID) {
+
+				// Пропускаем объявление функции (proc functionName)
+				if (i > 0 && lextable.table[i - 1].lexema == LEX_FUNCTION) continue;
+
+				int idxTI = lextable.table[i].idxTI;
+				IT::Entry itEntry = IT::GetEntry(idtable, idxTI);
+
+				// Если это вызов функции (Type == F)
+				if (itEntry.idtype == IT::F) {
+
+					// Проверка синтаксиса: после ID должна идти '('
+					if (i + 1 >= lextable.size || lextable.table[i + 1].lexema != LEX_LEFTHESIS) {
+						// Это странная ситуация, скорее всего отловится синтаксическим анализатором,
+						// но на всякий случай пропускаем
+						continue;
+					}
+
+					// Считаем фактические параметры
+					int actualCount = 0;
+					int nextLexIdx = i + 2; // Символ после '('
+
+					// Если сразу закрывающая скобка '()', то параметров 0
+					if (lextable.table[nextLexIdx].lexema == LEX_RIGHTHESIS) {
+						actualCount = 0;
+					}
+					else {
+						// Если не пусто, значит как минимум 1 параметр есть
+						actualCount = 1;
+						int balance = 0; // Баланс скобок для пропуска вложенных вызовов foo(a, bar(b,c))
+
+						// Бежим вперед до закрывающей скобки ТЕКУЩЕГО вызова
+						for (int j = nextLexIdx; j < lextable.size; j++) {
+							char lex = lextable.table[j].lexema;
+
+							if (lex == LEX_LEFTHESIS) {
+								balance++;
+							}
+							else if (lex == LEX_RIGHTHESIS) {
+								if (balance == 0) {
+									// Нашли закрывающую скобку нашей функции
+									break;
+								}
+								balance--;
+							}
+							else if (lex == LEX_COMMA) {
+								// Запятая считается только если мы на верхнем уровне вложенности
+								if (balance == 0) {
+									actualCount++;
+								}
+							}
+							else if (lex == LEX_SEMICOLON) {
+								// Аварийный выход, если забыли скобку (защита от зацикливания)
+								break;
+							}
+						}
+					}
+
+					// Получаем ожидаемое количество
+					int expectedCount = GetExpectedParamCount(idtable, idxTI);
+
+					// Сравниваем
+					if (actualCount != expectedCount) {
+						// Ошибка 306: Неверное количество аргументов
+						// Используем throw ERROR_THROW_IN, чтобы указать строку
+						throw ERROR_THROW_IN(306, lextable.table[i].sn, -1);
+					}
+				}
+			}
+		}
 	}
 
 	bool Analyze(LT::LexTable& lextable, IT::IdTable& idtable, Log::LOG log) {

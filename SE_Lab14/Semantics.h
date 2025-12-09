@@ -10,4 +10,5 @@
 namespace Semantics {
 	void InjectStandardLibrary(IT::IdTable& idtable);
 	bool Analyze(LT::LexTable& lextable, IT::IdTable& idtable, Log::LOG log);
+	void CheckParamCount(LT::LexTable& lextable, IT::IdTable& idtable);
 }
