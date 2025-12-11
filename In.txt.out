@@ -1,0 +1,437 @@
+.586
+.model flat, stdcall
+option casemap :none
+
+; --- Libs ---
+includelib kernel32.lib
+includelib libucrt.lib
+
+; --- WinAPI ---
+ExitProcess PROTO :DWORD
+GetStdHandle PROTO :DWORD
+WriteConsoleA PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
+
+; --- User Lib ---
+str_len PROTO :DWORD
+tostr PROTO :DWORD
+touint PROTO :DWORD
+date PROTO
+get_time PROTO
+sub_str PROTO :DWORD, :DWORD, :DWORD
+
+.stack 4096
+
+.data
+	console_handle dd 0
+	newline db 13, 10, 0
+	buffer db 256 dup(0)
+	calculate$res dd 110
+	L10 dd 2
+	greeting$hello_s db "", 0
+	greeting$hello dd greeting$hello_s
+	L14_s db "Hello, ", 0
+	L14 dd L14_s
+	entry$x dd 10
+	entry$y dd 10
+	entry$counter dd 110
+	entry$msg_s db "10", 0
+	entry$msg dd entry$msg_s
+	entry$dateStr_s db "11.12.2025", 0
+	entry$dateStr dd entry$dateStr_s
+	L20 dd 100
+	L21 dd 10
+	entry$fDateNumb_s db "1", 0
+	entry$fDateNumb dd entry$fDateNumb_s
+	L23 dd 1
+	entry$numb dd 1
+	L25 dd 15
+	L26_s db "Start Loop:", 0
+	L26 dd L26_s
+	entry$temp dd 1
+	L28_s db "End", 0
+	L28 dd L28_s
+	L29 dd 0
+
+.code
+
+print_str PROC uses eax ebx ecx edx, pstr:DWORD
+	push -11
+	call GetStdHandle
+	mov console_handle, eax
+	mov edx, pstr
+	xor ecx, ecx
+calc_len:
+	cmp byte ptr [edx+ecx], 0
+	je print_now
+	inc ecx
+	jmp calc_len
+print_now:
+	push 0
+	push 0
+	push ecx
+	push pstr
+	push console_handle
+	call WriteConsoleA
+	ret
+print_str ENDP
+
+outnum PROC uses eax ebx ecx edx, number:DWORD
+	mov eax, number
+	mov ecx, 0
+	mov ebx, 10
+div_loop:
+	xor edx, edx
+	div ebx
+	add dl, '0'
+	push edx
+	inc ecx
+	test eax, eax
+	jnz div_loop
+print_loop:
+	pop eax
+	mov buffer[0], al
+	push ecx
+	invoke print_str, addr buffer
+	pop ecx
+	loop print_loop
+	ret
+outnum ENDP
+
+print_newline PROC
+	invoke print_str, addr newline
+	ret
+print_newline ENDP
+
+main PROC
+M0: jmp M27
+
+M1: pop eax
+mov calculate$b, eax
+
+M2: pop eax
+mov calculate$a, eax
+
+M3: push offset calculate$res
+
+M4: push offset calculate$a
+
+M5: push offset calculate$b
+
+M6: pop ebx
+mov ebx, [ebx]
+pop eax
+mov eax, [eax]
+add eax, ebx
+push eax
+
+M7: push 2
+
+M8: pop ebx
+pop eax
+imul eax, ebx
+push eax
+
+M9: push 2
+
+M10: pop ebx
+pop eax
+cdq
+idiv ebx
+push eax
+
+M11: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M12: push offset calculate$res
+
+M13: push offset calculate$res
+
+M14: push offset calculate$a
+
+M15: push 2
+
+M16: pop ebx
+pop eax
+mov eax, [eax]
+cdq
+idiv ebx
+mov eax, edx
+push eax
+
+M17: pop ebx
+pop eax
+mov eax, [eax]
+add eax, ebx
+push eax
+
+M18: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M19: push offset calculate$res
+
+M20: push 0
+call ExitProcess
+
+M21: pop eax
+mov greeting$name, eax
+
+M22: push offset greeting$hello
+
+M23: push L14
+
+M24: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M25: push offset greeting$hello
+
+M26: push 0
+call ExitProcess
+
+M27: push offset entry$x
+
+M28: push 100
+
+M29: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M30: push offset entry$y
+
+M31: push 10
+
+M32: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M33: push offset entry$counter
+
+M34: push offset entry$x
+
+M35: push offset entry$y
+
+M36: call M1
+
+M37: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M38: push offset entry$counter
+
+M39: pop eax
+mov eax, [eax]
+invoke outnum, eax
+invoke print_newline
+
+M40: push offset entry$dateStr
+
+M41: call date
+push eax
+
+M42: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M43: push offset entry$dateStr
+
+M44: pop eax
+mov eax, [eax]
+invoke print_str, eax
+invoke print_newline
+
+M45: push offset entry$x
+
+M46: push offset entry$dateStr
+
+M47: pop eax
+mov eax, [eax]
+push eax
+call str_len
+push eax
+
+M48: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M49: push offset entry$x
+
+M50: pop eax
+mov eax, [eax]
+invoke outnum, eax
+invoke print_newline
+
+M51: push offset entry$msg
+
+M52: push offset entry$y
+
+M53: pop eax
+mov eax, [eax]
+push eax
+call tostr
+push eax
+
+M54: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M55: push offset entry$msg
+
+M56: pop eax
+mov eax, [eax]
+invoke print_str, eax
+invoke print_newline
+
+M57: push offset entry$fDateNumb
+
+M58: push offset entry$dateStr
+
+M59: push 1
+
+M60: push 1
+
+M61: pop ecx
+pop ebx
+pop eax
+mov eax, [eax]
+push ecx
+push ebx
+push eax
+call sub_str
+push eax
+
+M62: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M63: push offset entry$numb
+
+M64: push offset entry$fDateNumb
+
+M65: pop eax
+mov eax, [eax]
+push eax
+call touint
+push eax
+
+M66: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M67: push offset entry$numb
+
+M68: pop eax
+mov eax, [eax]
+invoke outnum, eax
+invoke print_newline
+
+M69: push offset entry$x
+
+M70: push 15
+
+M71: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M72: push offset entry$y
+
+M73: push 10
+
+M74: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M75: push L26
+
+M76: pop eax
+invoke print_str, eax
+invoke print_newline
+
+M77: push offset entry$x
+
+M78: push offset entry$y
+
+M79: pop ebx
+mov ebx, [ebx]
+pop eax
+mov eax, [eax]
+cmp eax, ebx
+mov eax, 0
+setg al
+push eax
+
+M80: pop eax
+cmp eax, 0
+je M94
+
+M81: push offset entry$temp
+
+M82: push offset entry$x
+
+M83: push offset entry$y
+
+M84: pop ebx
+mov ebx, [ebx]
+pop eax
+mov eax, [eax]
+sub eax, ebx
+push eax
+
+M85: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M86: push offset entry$temp
+
+M87: pop eax
+mov eax, [eax]
+invoke outnum, eax
+invoke print_newline
+
+M88: push offset entry$x
+
+M89: push offset entry$x
+
+M90: push 1
+
+M91: pop ebx
+pop eax
+mov eax, [eax]
+sub eax, ebx
+push eax
+
+M92: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M93: jmp M77
+
+M94: push L28
+
+M95: pop eax
+invoke print_str, eax
+invoke print_newline
+
+M96: push 0
+
+M97: push 0
+call ExitProcess
+
+main ENDP
+end main

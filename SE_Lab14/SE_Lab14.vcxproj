@@ -140,6 +140,7 @@
     <ClCompile Include="CodeGen.cpp" />
     <ClCompile Include="Error.cpp" />
     <ClCompile Include="Executor.cpp" />
+    <ClCompile Include="FST.cpp" />
     <ClCompile Include="Gener.cpp" />
     <ClCompile Include="GRB.cpp" />
     <ClCompile Include="In.cpp" />
@@ -152,12 +153,13 @@
     <ClCompile Include="Polish.cpp" />
     <ClCompile Include="RemoveSpaces.cpp" />
     <ClCompile Include="Semantics.cpp" />
-    <ClCompile Include="SE_Lab14.cpp" />
+    <ClCompile Include="BPV_2025.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CodeGen.h" />
     <ClInclude Include="Error.h" />
     <ClInclude Include="Executor.h" />
+    <ClInclude Include="FST.h" />
     <ClInclude Include="Gener.h" />
     <ClInclude Include="GRB.h" />
     <ClInclude Include="In.h" />

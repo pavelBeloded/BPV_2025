@@ -76,7 +76,7 @@ namespace IT {
         return idtable.size++;
     }
 
-    int AddIntLiteral(IdTable& idtable, int value, int idxfirstLE) {
+     int AddIntLiteral(IdTable& idtable, unsigned int value, int idxfirstLE) {
         for (int i = 0; i < idtable.size; i++) {
             Entry& entry = idtable.table[i];
             if (entry.idtype == L && entry.iddatatype == INT && entry.value.vint == value) {

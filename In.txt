@@ -1,5 +1,69 @@
+// --- ФУНКЦИИ ---
+
+uint proc calculate(uint a, uint b) {
+    var uint res;
+    // Арифметика: +, -, *, /, %
+    res = (a + b) * 2 / 2;
+    res = res + (a % 2);
+    ret res;
+};
+
+
+text proc greeting(text name) {
+    var text hello;
+    hello = 'Hello, ';
+    ret hello; 
+};
+
+// --- ТОЧКА ВХОДА ---
 entry {
-    var uifefnt x;
-var uint t;
-ret 0;
+    // 1. Объявление переменных разных типов
+    var uint x;
+    var uint y;
+    var uint counter;
+    var text msg;
+    var text dateStr;
+    
+    // 2. Инициализация (десятичная и восьмеричная)
+    x = 100;
+    y = 012; // 10 в десятичной
+    
+    // 3. Вызов пользовательской функции
+    counter = calculate(x, y);
+    echo counter; // Ожидаем: (100+10)*1 + 0 = 110
+
+    // 4. Вызов стандартной библиотеки
+    dateStr = date();
+    echo dateStr;
+    
+    // длина строки от даты
+    x = length(dateStr);
+    echo x;
+
+    // Конвертация
+    msg = tostr(y);
+    echo msg;
+
+    // Подстрока и преобразование в число
+    var text fDateNumb = substr(dateStr, 1, 1); 
+    var uint numb = touint(fDateNumb);
+    echo numb;
+
+    // 5. Цикл WHILE и СРАВНЕНИЯ
+    
+    x = 15;
+    y = 10;
+
+    echo 'Start Loop:';
+    
+    while (x > y) {
+        var uint temp;
+        temp = x - y;
+        echo temp;
+        
+        x = x - 1;
+    };
+
+    echo 'End';
+    ret 0;
 };

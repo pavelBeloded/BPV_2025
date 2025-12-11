@@ -3,7 +3,6 @@ entry {
     var text str = 'Hello World';
     var text temp_s;
     var uint temp_n;
-var uint 11f;
     var text d;
     var text t;
     echo '--- Standard Library Test ---';

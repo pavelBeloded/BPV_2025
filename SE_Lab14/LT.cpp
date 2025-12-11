@@ -2,279 +2,318 @@
 #include "LT.h"
 #include "IT.h"
 #include "Error.h"
+#include "FST.h"
 #include <string>
 #include <vector>
-#include <cctype>
+#include <algorithm>
 #include <new>
 #include <iostream>
 
-// Константы и массивы keywords/separators должны быть согласованы с LT.h (KEYWORDS_COUNT=8)
+// --- FST INIT SECTION (Оставляем как было) ---
+namespace FST_Graphs {
+    std::vector<FST::RELATION> make_range(char start, char end, short target_state) {
+        std::vector<FST::RELATION> rels;
+        for (char c = start; c <= end; ++c) rels.push_back(FST::RELATION(c, target_state));
+        return rels;
+    }
+    void add_char(std::vector<FST::RELATION>& rels, char c, short target_state) {
+        rels.push_back(FST::RELATION(c, target_state));
+    }
+    FST::RELATION* copy_rels_to_raw(const std::vector<FST::RELATION>& source) {
+        if (source.empty()) return nullptr;
+        FST::RELATION* raw = (FST::RELATION*)malloc(source.size() * sizeof(FST::RELATION));
+        if (!raw) throw ERROR_THROW(214);
+        for (size_t i = 0; i < source.size(); ++i) raw[i] = source[i];
+        return raw;
+    }
+
+    FST::FST* fst_id = nullptr;
+    FST::FST* fst_int = nullptr;
+    FST::FST* fst_oct = nullptr;
+
+    void Init() {
+        if (fst_id) return;
+
+        // 1. ID
+        std::vector<FST::RELATION> r0_id, r1_id;
+        auto az = make_range('a', 'z', 1); r0_id.insert(r0_id.end(), az.begin(), az.end());
+        auto AZ = make_range('A', 'Z', 1); r0_id.insert(r0_id.end(), AZ.begin(), AZ.end());
+        add_char(r0_id, '_', 1);
+        r1_id = r0_id;
+        auto d09 = make_range('0', '9', 1); r1_id.insert(r1_id.end(), d09.begin(), d09.end());
+
+        FST::NODE* nodes_id = new FST::NODE[2];
+        nodes_id[0].n_relation = (short)r0_id.size(); nodes_id[0].relations = copy_rels_to_raw(r0_id);
+        nodes_id[1].n_relation = (short)r1_id.size(); nodes_id[1].relations = copy_rels_to_raw(r1_id);
+        fst_id = new FST::FST(0, FST::NODE()); fst_id->nstates = 2; fst_id->node = nodes_id; fst_id->rstates = new short[2];
+
+        // 2. INT
+        std::vector<FST::RELATION> r_int;
+        auto nums = make_range('0', '9', 1);
+        r_int.insert(r_int.end(), nums.begin(), nums.end());
+        FST::NODE* nodes_int = new FST::NODE[2];
+        nodes_int[0].n_relation = (short)r_int.size(); nodes_int[0].relations = copy_rels_to_raw(r_int);
+        nodes_int[1].n_relation = (short)r_int.size(); nodes_int[1].relations = copy_rels_to_raw(r_int);
+        fst_int = new FST::FST(0, FST::NODE()); fst_int->nstates = 2; fst_int->node = nodes_int; fst_int->rstates = new short[2];
+
+        // 3. OCT
+        std::vector<FST::RELATION> r0_oct, r1_oct;
+        add_char(r0_oct, '0', 1);
+        r1_oct = make_range('0', '7', 1);
+        FST::NODE* nodes_oct = new FST::NODE[2];
+        nodes_oct[0].n_relation = (short)r0_oct.size(); nodes_oct[0].relations = copy_rels_to_raw(r0_oct);
+        nodes_oct[1].n_relation = (short)r1_oct.size(); nodes_oct[1].relations = copy_rels_to_raw(r1_oct);
+        fst_oct = new FST::FST(0, FST::NODE()); fst_oct->nstates = 2; fst_oct->node = nodes_oct; fst_oct->rstates = new short[2];
+    }
+}
+
+// -----------------------------------------------------
+
 LT::Keyword keywords[KEYWORDS_COUNT]{
-	{"text",	LEX_TYPE},
-	{"uint",	LEX_TYPE},
-	{"proc",	LEX_FUNCTION},
-	{"var",		LEX_DECLARE},
-	{"ret",		LEX_RETURN},
-	{"echo",	LEX_PRINT},
-	{"entry",	LEX_MAIN},
-	{"while",	LEX_WHILE}
+    {"text",	LEX_TYPE},
+    {"uint",	LEX_TYPE},
+    {"proc",	LEX_FUNCTION},
+    {"var",		LEX_DECLARE},
+    {"ret",		LEX_RETURN},
+    {"echo",	LEX_PRINT},
+    {"entry",	LEX_MAIN},
+    {"while",	LEX_WHILE}
 };
 
 LT::Separator separators[SEPARATORS_COUNT]{
-	{';', LEX_SEMICOLON}, {',', LEX_COMMA},
-	{'{', LEX_LEFTBRACE}, {'}', LEX_BRACELET},
-	{'(', LEX_LEFTHESIS}, {')', LEX_RIGHTHESIS}
+    {';', LEX_SEMICOLON}, {',', LEX_COMMA},
+    {'{', LEX_LEFTBRACE}, {'}', LEX_BRACELET},
+    {'(', LEX_LEFTHESIS}, {')', LEX_RIGHTHESIS}
 };
 
 namespace LT {
 
-	bool isId(const std::string& word) {
-		if (word.empty()) return false;
-		if (isdigit(word[0])) return false; // ID не может начинаться с цифры
-		for (char c : word) {
-			if (!isalnum(c) && c != '_') return false;
-		}
-		return true;
-	}
+    bool checkFST(FST::FST* _fst, const std::string& word) {
+        char* cstr = new char[word.length() + 1];
+        strcpy_s(cstr, word.length() + 1, word.c_str());
+        FST::FST fst(cstr, *_fst);
+        bool result = FST::execute(fst);
+        delete[] fst.rstates;
+        delete[] fst.node;
+        delete[] cstr;
+        return result;
+    }
 
-	bool isNumericLiteral(const std::string& word) {
-		if (word.empty()) return false;
-		for (char c : word) if (!isdigit(c)) return false;
-		return true;
-	}
+    char getKeywordLexem(const std::string& word) {
+        for (const auto& kw : keywords) {
+            if (kw.keyword == word) return kw.lexem;
+        }
+        return 0;
+    }
 
-	bool isStringLiteral(const std::string& word) {
-		return word.length() >= 2 && word.front() == '\'' && word.back() == '\'';
-	}
+    enum class Context {
+        GLOBAL, DECLARE_SECTION, FUNCTION_DECLARATION, PARAMETER_LIST
+    };
 
-	char getKeywordLexem(const std::string& word) {
-		for (const auto& kw : keywords) {
-			if (kw.keyword == word) return kw.lexem;
-		}
-		return 0;
-	}
+    void FillLTIT(LexTable& lextable, IT::IdTable& idtable, In::IN& in) {
+        FST_Graphs::Init();
 
-	enum class Context {
-		GLOBAL,
-		DECLARE_SECTION,
-		FUNCTION_DECLARATION,
-		PARAMETER_LIST
-	};
+        std::vector<Context> contextStack;
+        contextStack.push_back(Context::GLOBAL);
 
-	void FillLTIT(LexTable& lextable, IT::IdTable& idtable, In::IN& in) {
-		std::vector<Context> contextStack;
-		contextStack.push_back(Context::GLOBAL);
+        IT::IDDATATYPE lastDataType = IT::UNKNOWN;
+        std::string currentScope = "global";
+        bool entryDefined = false;
+        bool nextIsFunctionName = false;
 
-		IT::IDDATATYPE lastDataType = IT::UNKNOWN;
-		std::string currentScope = "global";
-		bool entryDefined = false;
-		bool nextIsFunctionName = false;
+        std::string word = "";
+        int line = 1;
+        int col = 0; // Текущая колонка
 
-		std::string word = "";
-		int line = 1;
+        // Лямбда обработки накопленного слова
+        auto processWord = [&](int wordStartCol) {
+            if (word.empty()) return;
 
-		auto processWord = [&]() {
-			if (word.empty()) return;
+            char lexem = getKeywordLexem(word);
 
-			char lexem = getKeywordLexem(word);
+            if (lexem) {
+                Add(lextable, { lexem, line, LT_TI_NULLIDX });
+                if (lexem == LEX_DECLARE) contextStack.push_back(Context::DECLARE_SECTION);
+                else if (lexem == LEX_FUNCTION) { contextStack.push_back(Context::FUNCTION_DECLARATION); nextIsFunctionName = true; }
+                else if (lexem == LEX_MAIN) {
+                    if (entryDefined) throw ERROR_THROW_IN(310, line, wordStartCol);
+                    entryDefined = true;
+                    currentScope = "entry";
+                }
+                else if (word == "text") lastDataType = IT::STR;
+                else if (word == "uint") lastDataType = IT::INT;
+            }
+            else {
+                // FST Checks
+                if (word.length() > 1 && word[0] == '0') {
+                    if (checkFST(FST_Graphs::fst_oct, word)) {
+                        unsigned int value = 0;
+                        try { value = std::stoul(word, nullptr, 8); }
+                        catch (...) { throw ERROR_THROW_IN(116, line, wordStartCol); }
+                        int idx = IT::AddIntLiteral(idtable, value, line);
+                        Add(lextable, { LEX_LITERAL, line, idx });
+                    }
+                    else throw ERROR_THROW_IN(116, line, wordStartCol);
+                }
+                else if (isdigit(word[0])) {
+                    if (checkFST(FST_Graphs::fst_int, word)) {
+                        unsigned int value = 0;
+                        try { value = std::stoul(word); }
+                        catch (...) { throw ERROR_THROW_IN(116, line, wordStartCol); }
+                        int idx = IT::AddIntLiteral(idtable, value, line);
+                        Add(lextable, { LEX_LITERAL, line, idx });
+                    }
+                    else throw ERROR_THROW_IN(117, line, wordStartCol);
+                }
+                else if (checkFST(FST_Graphs::fst_id, word)) {
+                    if (word.length() > ID_MAXSIZE) throw ERROR_THROW_IN(104, line, wordStartCol);
+                    IT::IDTYPE idType = IT::V;
+                    Context currentContext = contextStack.back();
 
-			// 1. Ключевые слова
-			if (lexem) {
-				Add(lextable, { lexem, line, LT_TI_NULLIDX });
+                    if (nextIsFunctionName) {
+                        idType = IT::F;
+                        nextIsFunctionName = false;
+                        currentScope = word;
+                        if (IT::IsId(idtable, word) != TI_NULLIDX) throw ERROR_THROW_IN(302, line, wordStartCol);
+                        int idx = IT::AddId(idtable, word, lastDataType, idType, line);
+                        Add(lextable, { LEX_ID, line, idx });
+                    }
+                    else {
+                        if (currentContext == Context::PARAMETER_LIST) idType = IT::P;
+                        std::string scopedName = currentScope + "$" + word;
+                        if (currentContext == Context::DECLARE_SECTION || currentContext == Context::PARAMETER_LIST) {
+                            if (IT::IsId(idtable, scopedName) != TI_NULLIDX) throw ERROR_THROW_IN(302, line, wordStartCol);
+                            int idx = IT::AddId(idtable, scopedName, lastDataType, idType, line);
+                            Add(lextable, { LEX_ID, line, idx });
+                        }
+                        else {
+                            int idx = IT::IsId(idtable, scopedName);
+                            if (idx == TI_NULLIDX) idx = IT::IsId(idtable, word);
+                            if (idx == TI_NULLIDX) throw ERROR_THROW_IN(301, line, wordStartCol);
+                            Add(lextable, { LEX_ID, line, idx });
+                        }
+                    }
+                }
+                else {
+                    // Ошибка 114: Недопустимый символ (лексема не распознана)
+                    throw ERROR_THROW_IN(114, line, wordStartCol);
+                }
+            }
+            word.clear();
+            };
 
-				if (lexem == LEX_DECLARE)
-					contextStack.push_back(Context::DECLARE_SECTION);
-				else if (lexem == LEX_FUNCTION) {
-					contextStack.push_back(Context::FUNCTION_DECLARATION);
-					nextIsFunctionName = true;
-				}
-				else if (lexem == LEX_MAIN) {
-					if (entryDefined) throw ERROR_THROW_IN(310, line, 0);
-					entryDefined = true;
-					currentScope = "entry";
-				}
-				else if (word == "text") lastDataType = IT::STR;
-				else if (word == "uint") lastDataType = IT::INT;
-			}
-			// 2. Числовые литералы
-			else if (isNumericLiteral(word)) {
-				int value = 0;
-				if (word.length() > 1 && word[0] == '0') {
-					for (char c : word) {
-						if (c == '8' || c == '9') throw ERROR_THROW_IN(116, line, 0);
-					}
-					try { value = std::stoi(word, nullptr, 8); }
-					catch (...) { throw ERROR_THROW_IN(116, line, 0); }
-				}
-				else {
-					try { value = std::stoi(word); }
-					catch (...) { throw ERROR_THROW_IN(116, line, 0); }
-				}
-				int idx = IT::AddIntLiteral(idtable, value, line);
-				Add(lextable, { LEX_LITERAL, line, idx });
-			}
-			// 3. Строковые литералы (попадают сюда уже готовыми из внешнего цикла)
-			else if (isStringLiteral(word)) {
-				std::string literalContent = word.substr(1, word.length() - 2);
-				int idx = IT::AddStringLiteral(idtable, literalContent, line);
-				Add(lextable, { LEX_LITERAL, line, idx });
-			}
-			// 4. Идентификаторы
-			else if (isId(word)) {
-				if (word.length() > ID_MAXSIZE) throw ERROR_THROW_IN(104, line, 0);
+        for (int i = 0; i < in.size; ++i) {
+            unsigned char c = in.text[i];
+            unsigned char next_c = (i + 1 < in.size) ? in.text[i + 1] : 0;
+            col++; // Увеличиваем колонку
 
-				IT::IDTYPE idType = IT::V;
-				Context currentContext = contextStack.back();
+            // 1. Комментарии
+            if (c == '/' && next_c == '/') {
+                // Сначала обработаем то, что накопилось ДО комментария
+                processWord(col - (int)word.length());
 
-				if (nextIsFunctionName) {
-					idType = IT::F;
-					nextIsFunctionName = false;
-					currentScope = word;
+                while (i < in.size && in.text[i] != '\n') {
+                    i++;
+                    // col не увеличиваем, или увеличиваем? 
+                    // Технически мы пропускаем символы, но для отчета ошибок следующей строки это не важно
+                }
+                // Откатываемся, чтобы '\n' обработался ниже
+                i--;
+                continue;
+            }
 
-					// Проверка повторного объявления функции
-					if (IT::IsId(idtable, word) != TI_NULLIDX) throw ERROR_THROW_IN(302, line, 0);
+            // 2. Строковые литералы
+            if (c == '\'') {
+                // Сбрасываем накопленное слово (если было id перед строкой без пробела)
+                processWord(col - 1 - (int)word.length());
 
-					int idx = IT::AddId(idtable, word, lastDataType, idType, line);
-					Add(lextable, { LEX_ID, line, idx });
-				}
-				else {
-					if (currentContext == Context::PARAMETER_LIST) idType = IT::P;
-					std::string scopedName = currentScope + "$" + word;
+                int strStartCol = col;
+                int strLine = line;
+                std::string literalContent = "";
 
-					if (currentContext == Context::DECLARE_SECTION || currentContext == Context::PARAMETER_LIST) {
-						// Проверка повторного объявления переменной в текущем скоупе
-						if (IT::IsId(idtable, scopedName) != TI_NULLIDX) {
-							throw ERROR_THROW_IN(302, line, 0); // <--- ОШИБКА 302
-						}
-						int idx = IT::AddId(idtable, scopedName, lastDataType, idType, line);
-						Add(lextable, { LEX_ID, line, idx });
-					}
-					else {
-						int idx = IT::IsId(idtable, scopedName);
-						if (idx == TI_NULLIDX) idx = IT::IsId(idtable, word);
-						if (idx == TI_NULLIDX) throw ERROR_THROW_IN(301, line, 0);
-						Add(lextable, { LEX_ID, line, idx });
-					}
-				}
-			}
-			// 5. Неизвестная лексема (Ошибка)
-			else {
-				// Если начинается с цифры, но содержит буквы (например 1var)
-				if (isdigit(word[0])) { throw ERROR_THROW_IN(117, line, 0);
-			}
-				else {throw ERROR_THROW_IN(114, line, 0);
-				}
-			}
-			word.clear();
-			};
+                i++; // Пропускаем открывающую кавычку
+                col++; // Учитываем её в колонке
 
-		// --- ЦИКЛ ПО СИМВОЛАМ ---
-		for (int i = 0; i < in.size; ++i) {
-			unsigned char c = in.text[i];
-			unsigned char next_c = (i + 1 < in.size) ? in.text[i + 1] : 0;
+                while (i < in.size && in.text[i] != '\'') {
+                    if (in.text[i] == '\n') throw ERROR_THROW_IN(119, strLine, col);
+                    literalContent += in.text[i];
+                    i++;
+                    col++;
+                }
 
-			// Комментарии
-			if (c == '/' && next_c == '/') {
-				while (i < in.size && in.text[i] != '\n') i++;
-				processWord();
-				line++;
-				continue;
-			}
+                if (i >= in.size) throw ERROR_THROW_IN(119, strLine, col); // Не закрыта
 
-			// Строковые литералы
-			if (c == '\'') {
-				processWord();
-				int strLine = line;
-				word += c;
-				i++;
-				while (i < in.size && in.text[i] != '\'') {
-					if (in.text[i] == '\n') throw ERROR_THROW_IN(119, strLine, 0);
-					word += in.text[i];
-					i++;
-				}
-				if (i >= in.size) throw ERROR_THROW_IN(119, strLine, 0);
-				word += '\'';
-				if (word.length() <= 2) throw ERROR_THROW_IN(118, strLine, 0);
+                // i сейчас указывает на закрывающую кавычку.
+                // Цикл for сделает i++, так что всё ок.
+                // Но col нужно увеличить для закрывающей кавычки
+                col++;
 
-				// Вызываем processWord для готовой строки, она попадет в ветку isStringLiteral
-				processWord();
-				continue;
-			}
+                // ВАЖНО: Добавляем литерал ВРУЧНУЮ, минуя processWord
+                int idx = IT::AddStringLiteral(idtable, literalContent, line);
+                Add(lextable, { LEX_LITERAL, line, idx });
+                continue;
+            }
 
-			if (isspace(c)) {
-				processWord();
-				if (c == '\n') line++;
-				continue;
-			}
+            // 3. Пробелы и переносы
+            if (isspace(c)) {
+                processWord(col - 1 - (int)word.length());
+                if (c == '\n') {
+                    line++;
+                    col = 0; // Сброс колонки
+                }
+                continue;
+            }
 
-			bool is_separator = false;
-			for (const auto& sep : separators) {
-				if (c == sep.separator) {
-					processWord();
-					Add(lextable, { sep.lexem, line, LT_TI_NULLIDX });
+            // 4. Разделители
+            bool is_separator = false;
+            for (const auto& sep : separators) {
+                if (c == sep.separator) {
+                    processWord(col - 1 - (int)word.length());
+                    Add(lextable, { sep.lexem, line, LT_TI_NULLIDX });
 
-					if (c == '(' && contextStack.back() == Context::FUNCTION_DECLARATION)
-						contextStack.back() = Context::PARAMETER_LIST;
-					else if (c == ')' && contextStack.back() == Context::PARAMETER_LIST)
-						contextStack.pop_back();
-					else if (c == ';' && contextStack.back() == Context::DECLARE_SECTION)
-						contextStack.pop_back();
-					else if (c == '{' && contextStack.back() == Context::FUNCTION_DECLARATION)
-						contextStack.pop_back();
+                    if (c == '(' && contextStack.back() == Context::FUNCTION_DECLARATION) contextStack.back() = Context::PARAMETER_LIST;
+                    else if (c == ')' && contextStack.back() == Context::PARAMETER_LIST) contextStack.pop_back();
+                    else if (c == ';' && contextStack.back() == Context::DECLARE_SECTION) contextStack.pop_back();
+                    else if (c == '{' && contextStack.back() == Context::FUNCTION_DECLARATION) contextStack.pop_back();
 
-					is_separator = true;
-					break;
-				}
-			}
-			if (is_separator) continue;
+                    is_separator = true; break;
+                }
+            }
+            if (is_separator) continue;
 
-			char opLexem = 0;
-			bool doubleChar = false;
-			if (c == '+') opLexem = LEX_PLUS;
-			else if (c == '-') opLexem = LEX_MINUS;
-			else if (c == '*') opLexem = LEX_STAR;
-			else if (c == '/') opLexem = LEX_DIRSLASH;
-			else if (c == '%') opLexem = LEX_MODULO;
-			else if (c == '=') {
-				if (next_c == '=') { opLexem = LEX_EQ; doubleChar = true; }
-				else {
-					opLexem = LEX_ASSIGN;
-					// Выход из секции объявления при инициализации (var int x = ...)
-					if (!contextStack.empty() && contextStack.back() == Context::DECLARE_SECTION) {
-						contextStack.pop_back();
-					}
-				}
-			}
-			else if (c == '!') { if (next_c == '=') { opLexem = LEX_NE; doubleChar = true; } }
-			else if (c == '<') { if (next_c == '=') { opLexem = LEX_LE; doubleChar = true; } else opLexem = LEX_LESS; }
-			else if (c == '>') { if (next_c == '=') { opLexem = LEX_GE; doubleChar = true; } else opLexem = LEX_MORE; }
+            // 5. Операторы
+            char opLexem = 0;
+            bool doubleChar = false;
+            if (c == '+') opLexem = LEX_PLUS;
+            else if (c == '-') opLexem = LEX_MINUS;
+            else if (c == '*') opLexem = LEX_STAR;
+            else if (c == '/') opLexem = LEX_DIRSLASH;
+            else if (c == '%') opLexem = LEX_MODULO;
+            else if (c == '=') { if (next_c == '=') { opLexem = LEX_EQ; doubleChar = true; } else { opLexem = LEX_ASSIGN; if (!contextStack.empty() && contextStack.back() == Context::DECLARE_SECTION) contextStack.pop_back(); } }
+            else if (c == '!') { if (next_c == '=') { opLexem = LEX_NE; doubleChar = true; } }
+            else if (c == '<') { if (next_c == '=') { opLexem = LEX_LE; doubleChar = true; } else opLexem = LEX_LESS; }
+            else if (c == '>') { if (next_c == '=') { opLexem = LEX_GE; doubleChar = true; } else opLexem = LEX_MORE; }
 
-			if (opLexem != 0) {
-				processWord();
-				Add(lextable, { opLexem, line, LT_TI_NULLIDX });
-				if (doubleChar) i++;
-				continue;
-			}
+            if (opLexem != 0) {
+                processWord(col - 1 - (int)word.length());
+                Add(lextable, { opLexem, line, LT_TI_NULLIDX });
+                if (doubleChar) {
+                    i++;
+                    col++;
+                }
+                continue;
+            }
 
-			word += c;
-		}
-		processWord();
-	}
+            // 6. Накопление символа
+            word += c;
+        }
+        // Обработка последнего слова, если файл кончился не пробелом
+        processWord(col - (int)word.length());
+    }
 
-	LexTable Create(int size) {
-		if (size <= 0 || size > LT_MAXSIZE) throw ERROR_THROW(211);
-		return LexTable{ size, 0, new Entry[size] };
-	}
-	void Add(LexTable& lextable, Entry entry) {
-		if (lextable.size >= lextable.maxsize) throw ERROR_THROW(210);
-		lextable.table[lextable.size++] = entry;
-	}
-	Entry GetEntry(LexTable& lextable, int index) {
-		if (index < 0 || index >= lextable.size) throw ERROR_THROW(212);
-		return lextable.table[index];
-	}
-	void Delete(LexTable& lextable) {
-		delete[] lextable.table;
-		lextable.table = nullptr;
-	}
+    // Остальные функции без изменений
+    LexTable Create(int size) { if (size <= 0 || size > LT_MAXSIZE) throw ERROR_THROW(211); return LexTable{ size, 0, new Entry[size] }; }
+    void Add(LexTable& lextable, Entry entry) { if (lextable.size >= lextable.maxsize) throw ERROR_THROW(210); lextable.table[lextable.size++] = entry; }
+    Entry GetEntry(LexTable& lextable, int index) { if (index < 0 || index >= lextable.size) throw ERROR_THROW(212); return lextable.table[index]; }
+    void Delete(LexTable& lextable) { delete[] lextable.table; lextable.table = nullptr; }
 }

@@ -14,3 +14,4 @@
 #include "CodeGen.h"
 #include "Executor.h"
 #include "Gener.h"
+#include "FST.h"
