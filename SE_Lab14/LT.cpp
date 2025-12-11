@@ -9,7 +9,6 @@
 #include <new>
 #include <iostream>
 
-// --- FST INIT SECTION (Оставляем как было) ---
 namespace FST_Graphs {
     std::vector<FST::RELATION> make_range(char start, char end, short target_state) {
         std::vector<FST::RELATION> rels;
@@ -34,7 +33,6 @@ namespace FST_Graphs {
     void Init() {
         if (fst_id) return;
 
-        // 1. ID
         std::vector<FST::RELATION> r0_id, r1_id;
         auto az = make_range('a', 'z', 1); r0_id.insert(r0_id.end(), az.begin(), az.end());
         auto AZ = make_range('A', 'Z', 1); r0_id.insert(r0_id.end(), AZ.begin(), AZ.end());
@@ -47,7 +45,6 @@ namespace FST_Graphs {
         nodes_id[1].n_relation = (short)r1_id.size(); nodes_id[1].relations = copy_rels_to_raw(r1_id);
         fst_id = new FST::FST(0, FST::NODE()); fst_id->nstates = 2; fst_id->node = nodes_id; fst_id->rstates = new short[2];
 
-        // 2. INT
         std::vector<FST::RELATION> r_int;
         auto nums = make_range('0', '9', 1);
         r_int.insert(r_int.end(), nums.begin(), nums.end());
@@ -56,7 +53,6 @@ namespace FST_Graphs {
         nodes_int[1].n_relation = (short)r_int.size(); nodes_int[1].relations = copy_rels_to_raw(r_int);
         fst_int = new FST::FST(0, FST::NODE()); fst_int->nstates = 2; fst_int->node = nodes_int; fst_int->rstates = new short[2];
 
-        // 3. OCT
         std::vector<FST::RELATION> r0_oct, r1_oct;
         add_char(r0_oct, '0', 1);
         r1_oct = make_range('0', '7', 1);
@@ -66,8 +62,6 @@ namespace FST_Graphs {
         fst_oct = new FST::FST(0, FST::NODE()); fst_oct->nstates = 2; fst_oct->node = nodes_oct; fst_oct->rstates = new short[2];
     }
 }
-
-// -----------------------------------------------------
 
 LT::Keyword keywords[KEYWORDS_COUNT]{
     {"text",	LEX_TYPE},
@@ -123,9 +117,8 @@ namespace LT {
 
         std::string word = "";
         int line = 1;
-        int col = 0; // Текущая колонка
+        int col = 0;   
 
-        // Лямбда обработки накопленного слова
         auto processWord = [&](int wordStartCol) {
             if (word.empty()) return;
 
@@ -144,7 +137,6 @@ namespace LT {
                 else if (word == "uint") lastDataType = IT::INT;
             }
             else {
-                // FST Checks
                 if (word.length() > 1 && word[0] == '0') {
                     if (checkFST(FST_Graphs::fst_oct, word)) {
                         unsigned int value = 0;
@@ -195,7 +187,6 @@ namespace LT {
                     }
                 }
                 else {
-                    // Ошибка 114: Недопустимый символ (лексема не распознана)
                     throw ERROR_THROW_IN(114, line, wordStartCol);
                 }
             }
@@ -205,34 +196,27 @@ namespace LT {
         for (int i = 0; i < in.size; ++i) {
             unsigned char c = in.text[i];
             unsigned char next_c = (i + 1 < in.size) ? in.text[i + 1] : 0;
-            col++; // Увеличиваем колонку
+            col++;   
 
-            // 1. Комментарии
             if (c == '/' && next_c == '/') {
-                // Сначала обработаем то, что накопилось ДО комментария
                 processWord(col - (int)word.length());
 
                 while (i < in.size && in.text[i] != '\n') {
                     i++;
-                    // col не увеличиваем, или увеличиваем? 
-                    // Технически мы пропускаем символы, но для отчета ошибок следующей строки это не важно
                 }
-                // Откатываемся, чтобы '\n' обработался ниже
                 i--;
                 continue;
             }
 
-            // 2. Строковые литералы
             if (c == '\'') {
-                // Сбрасываем накопленное слово (если было id перед строкой без пробела)
                 processWord(col - 1 - (int)word.length());
 
                 int strStartCol = col;
                 int strLine = line;
                 std::string literalContent = "";
 
-                i++; // Пропускаем открывающую кавычку
-                col++; // Учитываем её в колонке
+                i++;    
+                col++;     
 
                 while (i < in.size && in.text[i] != '\'') {
                     if (in.text[i] == '\n') throw ERROR_THROW_IN(119, strLine, col);
@@ -241,30 +225,24 @@ namespace LT {
                     col++;
                 }
 
-                if (i >= in.size) throw ERROR_THROW_IN(119, strLine, col); // Не закрыта
+                if (i >= in.size) throw ERROR_THROW_IN(119, strLine, col);   
 
-                // i сейчас указывает на закрывающую кавычку.
-                // Цикл for сделает i++, так что всё ок.
-                // Но col нужно увеличить для закрывающей кавычки
                 col++;
 
-                // ВАЖНО: Добавляем литерал ВРУЧНУЮ, минуя processWord
                 int idx = IT::AddStringLiteral(idtable, literalContent, line);
                 Add(lextable, { LEX_LITERAL, line, idx });
                 continue;
             }
 
-            // 3. Пробелы и переносы
             if (isspace(c)) {
                 processWord(col - 1 - (int)word.length());
                 if (c == '\n') {
                     line++;
-                    col = 0; // Сброс колонки
+                    col = 0;   
                 }
                 continue;
             }
 
-            // 4. Разделители
             bool is_separator = false;
             for (const auto& sep : separators) {
                 if (c == sep.separator) {
@@ -281,7 +259,6 @@ namespace LT {
             }
             if (is_separator) continue;
 
-            // 5. Операторы
             char opLexem = 0;
             bool doubleChar = false;
             if (c == '+') opLexem = LEX_PLUS;
@@ -304,14 +281,11 @@ namespace LT {
                 continue;
             }
 
-            // 6. Накопление символа
             word += c;
         }
-        // Обработка последнего слова, если файл кончился не пробелом
         processWord(col - (int)word.length());
     }
 
-    // Остальные функции без изменений
     LexTable Create(int size) { if (size <= 0 || size > LT_MAXSIZE) throw ERROR_THROW(211); return LexTable{ size, 0, new Entry[size] }; }
     void Add(LexTable& lextable, Entry entry) { if (lextable.size >= lextable.maxsize) throw ERROR_THROW(210); lextable.table[lextable.size++] = entry; }
     Entry GetEntry(LexTable& lextable, int index) { if (index < 0 || index >= lextable.size) throw ERROR_THROW(212); return lextable.table[index]; }

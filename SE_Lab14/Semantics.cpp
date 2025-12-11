@@ -64,13 +64,10 @@ namespace Semantics {
 		IT::Entry funcEntry = IT::GetEntry(idtable, funcIdx);
 		std::string funcName(funcEntry.id);
 
-		// 1. Проверяем стандартную библиотеку
 		for (const auto& lib : stdLib) {
 			if (lib.name == funcName) return (int)lib.paramTypes.size();
 		}
 
-		// 2. Проверяем пользовательскую функцию
-		// Считаем параметры в таблице идентификаторов (имя_функции$имя_параметра)
 		int count = 0;
 		std::string prefix = funcName + "$";
 		for (int i = 0; i < idtable.size; i++) {
@@ -84,43 +81,32 @@ namespace Semantics {
 		return count;
 	}
 
-	// === ГЛАВНАЯ ФУНКЦИЯ ПРОВЕРКИ ===
 	void CheckParamCount(LT::LexTable& lextable, IT::IdTable& idtable) {
 		for (int i = 0; i < lextable.size; i++) {
 
-			// Находим идентификатор
 			if (lextable.table[i].lexema == LEX_ID) {
 
-				// Пропускаем объявление функции (proc functionName)
 				if (i > 0 && lextable.table[i - 1].lexema == LEX_FUNCTION) continue;
 
 				int idxTI = lextable.table[i].idxTI;
 				IT::Entry itEntry = IT::GetEntry(idtable, idxTI);
 
-				// Если это вызов функции (Type == F)
 				if (itEntry.idtype == IT::F) {
 
-					// Проверка синтаксиса: после ID должна идти '('
 					if (i + 1 >= lextable.size || lextable.table[i + 1].lexema != LEX_LEFTHESIS) {
-						// Это странная ситуация, скорее всего отловится синтаксическим анализатором,
-						// но на всякий случай пропускаем
 						continue;
 					}
 
-					// Считаем фактические параметры
 					int actualCount = 0;
-					int nextLexIdx = i + 2; // Символ после '('
+					int nextLexIdx = i + 2;    
 
-					// Если сразу закрывающая скобка '()', то параметров 0
 					if (lextable.table[nextLexIdx].lexema == LEX_RIGHTHESIS) {
 						actualCount = 0;
 					}
 					else {
-						// Если не пусто, значит как минимум 1 параметр есть
 						actualCount = 1;
-						int balance = 0; // Баланс скобок для пропуска вложенных вызовов foo(a, bar(b,c))
+						int balance = 0;         
 
-						// Бежим вперед до закрывающей скобки ТЕКУЩЕГО вызова
 						for (int j = nextLexIdx; j < lextable.size; j++) {
 							char lex = lextable.table[j].lexema;
 
@@ -129,31 +115,24 @@ namespace Semantics {
 							}
 							else if (lex == LEX_RIGHTHESIS) {
 								if (balance == 0) {
-									// Нашли закрывающую скобку нашей функции
 									break;
 								}
 								balance--;
 							}
 							else if (lex == LEX_COMMA) {
-								// Запятая считается только если мы на верхнем уровне вложенности
 								if (balance == 0) {
 									actualCount++;
 								}
 							}
 							else if (lex == LEX_SEMICOLON) {
-								// Аварийный выход, если забыли скобку (защита от зацикливания)
 								break;
 							}
 						}
 					}
 
-					// Получаем ожидаемое количество
 					int expectedCount = GetExpectedParamCount(idtable, idxTI);
 
-					// Сравниваем
 					if (actualCount != expectedCount) {
-						// Ошибка 306: Неверное количество аргументов
-						// Используем throw ERROR_THROW_IN, чтобы указать строку
 						throw ERROR_THROW_IN(306, lextable.table[i].sn, -1);
 					}
 				}
@@ -184,12 +163,8 @@ namespace Semantics {
 			}
 
 			case LEX_ID: {
-				// --- 1. ИГНОРИРУЕМ ОБЪЯВЛЕНИЯ ---
-				// Пропускаем 'proc func'
 				if (i > 0 && lextable.table[i - 1].lexema == LEX_FUNCTION) break;
 
-				// Пропускаем 'var type id;' (объявление без инициализации)
-				// Иначе ID попадет на стек и функция "подумает", что это её аргумент
 				if (i > 0 && lextable.table[i - 1].lexema == LEX_TYPE &&
 					i + 1 < lextable.size && lextable.table[i + 1].lexema == LEX_SEMICOLON) {
 					break;
@@ -198,22 +173,17 @@ namespace Semantics {
 				IT::Entry itEntry = IT::GetEntry(idtable, entry.idxTI);
 
 				if (itEntry.idtype == IT::F) {
-					// === ПРОВЕРКА ВЫЗОВА ФУНКЦИИ ===
 					std::vector<IT::IDDATATYPE> expectedParams = GetFunctionParams(idtable, entry.idxTI);
 
-					// !!! ЗДЕСЬ ПРОВЕРЯЕМ КОЛИЧЕСТВО (НЕДОСТАТОК) !!!
 					if (typeStack.size() < expectedParams.size()) {
-						// Ошибка 306: Неверное количество аргументов функции
 						throw ERROR_THROW_IN(306, entry.sn, -1);
 					}
 
-					// Проверка типов
 					for (int p = (int)expectedParams.size() - 1; p >= 0; p--) {
 						IT::IDDATATYPE argType = typeStack.top();
 						typeStack.pop();
 
 						if (argType != expectedParams[p]) {
-							// Ошибка 604: Неверный тип параметра
 							throw ERROR_THROW_IN(604, entry.sn, -1);
 						}
 					}
@@ -221,7 +191,6 @@ namespace Semantics {
 					typeStack.push(itEntry.iddatatype);
 				}
 				else {
-					// Переменная
 					typeStack.push(itEntry.iddatatype);
 				}
 				break;
@@ -266,22 +235,15 @@ namespace Semantics {
 				break;
 			}
 
-						  // === КОНЕЦ ОПЕРАТОРА (;) ===
-						  // Здесь мы ловим ЛИШНИЕ ПАРАМЕТРЫ, которые остались на стеке
 			case LEX_SEMICOLON:
 			case LEX_BRACELET:
 			{
-				// Если в стеке > 1 элемента, значит, были лишние аргументы, 
-				// которые функция не забрала (потому что их слишком много).
 				if (typeStack.size() > 1) {
 					while (!typeStack.empty()) typeStack.pop();
 
-					// Ошибка 603: Ошибка в параметрах функции (лишние параметры)
-					// (Можно использовать 602, но 603 тут логичнее, если это вызов функции)
 					throw ERROR_THROW_IN(603, entry.sn, -1);
 				}
 
-				// Очистка перед следующей строкой
 				while (!typeStack.empty()) typeStack.pop();
 				break;
 			}

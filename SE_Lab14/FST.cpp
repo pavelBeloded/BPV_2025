@@ -48,14 +48,14 @@ namespace FST
 	bool execute(FST& fst)
 	{
 		int i, j;
-		memset(fst.rstates, -1, fst.nstates * sizeof(short)); // Заполняем fst.rstates массив -1-ами размером  fst.nstates * sizeof(short)
+		memset(fst.rstates, -1, fst.nstates * sizeof(short));          
 		for (fst.rstates[0] = 0, fst.position = 0; fst.position < (signed)(strlen(fst.string)); fst.position++)
 		{
 			for (i = 0; i < fst.nstates; i++)
 			{
 				if (fst.rstates[i] == fst.position)
 				{
-					for (j = 0; j < fst.node[i].n_relation; j++) //релейшены 
+					for (j = 0; j < fst.node[i].n_relation; j++)  
 					{
 						if (fst.node[i].relations[j].symbol == fst.string[fst.position])
 						{
@@ -65,6 +65,6 @@ namespace FST
 				};
 			};
 		};
-		return (fst.rstates[fst.nstates - 1] == (strlen(fst.string))); // Совпадает ли конечная позиция с длиной строки
+		return (fst.rstates[fst.nstates - 1] == (strlen(fst.string)));        
 	};
 }
