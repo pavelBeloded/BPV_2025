@@ -1,54 +1,69 @@
+// --- ФУНКЦИИ ---
+
+uint proc calculate(uint a, uint b) {
+    var uint res;
+    // Арифметика: +, -, *, /, %
+    res = (a + b) * 2 / 2;
+    res = res + (a % 2);
+    ret res;
+};
+
+
+text proc greeting(text name) {
+    var text hello;
+    hello = 'Hello, ';
+    ret hello; 
+};
+
+// --- ТОЧКА ВХОДА ---
 entry {
-    var uint num = 0;
-    var text str = 'Hello World';
-    var text temp_s;
-    var uint temp_n;
-    var text d;
-    var text t;
-    echo '--- Standard Library Test ---';
-	echo 55;
-    // 1. Тест date()
-    d = date();
-    echo 'Date:';
-    echo d;
-    // 2. Тест time()
-    t = time();
-    echo 'Time:';
-    echo t;
-
-    // 3. Тест length(text)
-    temp_n = length(str);
-    echo 'Length of "Hello World":';
-    echo temp_n;
-
-    // 4. Тест substr(text, start, len)
-    // Извлекаем "World" (с 6 индекса, длина 5)
-    temp_s = substr(str, 6, 5);
-    echo 'Substring result:';
-    echo temp_s;
-
-    // 5. Тест tostr(uint)
-    // Преобразуем число в строку
-    num = 2025;
-    temp_s = tostr(num);
-    echo 'Converted number to string:';
-    echo temp_s;
-
-    // 6. Тест touint(text)
-    // Преобразуем строку "55" в число и прибавляем 5
-    temp_s = '55';
-    temp_n = touint(temp_s);
-    temp_n = temp_n + 5;
-    echo 'Converted string "55" + 5 = ';
-    echo temp_n;
-
-    echo '--- Logic Test ---';
+    // 1. Объявление переменных разных типов
+    var uint x;
+    var uint y;
+    var uint counter;
+    var text msg;
+    var text dateStr;
     
-    // Цикл while
-    while (num > 2020) {
-        num = num -1;
-        echo num;
+    // 2. Инициализация (десятичная и восьмеричная)
+    x = 100;
+    y = 012; // 10 в десятичной
+    
+    // 3. Вызов пользовательской функции
+    counter = calculate(x, y);
+    echo counter; // Ожидаем: (100+10)*1 + 0 = 110
+
+    // 4. Вызов стандартной библиотеки
+    dateStr = date();
+    echo dateStr;
+    
+    // длина строки от даты
+    x = length(dateStr);
+    echo x;
+
+    // Конвертация
+    msg = tostr(y);
+    echo msg;
+
+    // Подстрока и преобразование в число
+    var text fDateNumb = substr(dateStr, 1, 1); 
+    var uint numb = touint(fDateNumb);
+    echo numb;
+
+    // 5. Цикл WHILE и СРАВНЕНИЯ
+    
+    x = 15;
+    y = 10;
+
+    echo 'Start Loop:';
+    
+    while (x > y) {
+        var uint temp;
+        temp = x - y;
+        echo temp;
+        
+        x = x - 1;
     };
 
+    echo 'End';
     ret 0;
 };

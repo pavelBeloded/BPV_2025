@@ -8,13 +8,19 @@
 namespace Gener
 {
 	enum StackItemType {
-		ITEM_INT_VAL,     
-		ITEM_INT_ADDR,      
-		ITEM_STR_VAL,        
-		ITEM_STR_ADDR       
+		ITEM_INT_VAL,
+		ITEM_INT_ADDR,
+		ITEM_STR_VAL,
+		ITEM_STR_ADDR
 	};
 
 	std::stack<StackItemType> stack_state;
+
+	std::string SafeName(const char* name) {
+		std::string s = name;
+		std::replace(s.begin(), s.end(), '$', '_');
+		return s;
+	}
 
 	void Head(std::ofstream* stream)
 	{
@@ -23,20 +29,19 @@ namespace Gener
 		*stream << "option casemap :none\n";
 
 		*stream << "\n; --- Libs ---\n";
-		*stream << "includelib kernel32.lib\n";
-		*stream << "includelib libucrt.lib\n";
+		*stream << "includelib msvcrt.lib\n";
+		*stream << "includelib legacy_stdio_definitions.lib\n";
 
-		*stream << "\n; --- WinAPI ---\n";
+		*stream << "\n; --- Externs ---\n";
 		*stream << "ExitProcess PROTO :DWORD\n";
-		*stream << "GetStdHandle PROTO :DWORD\n";
-		*stream << "WriteConsoleA PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD\n";
+		*stream << "printf PROTO C :DWORD, :VARARG\n";
+		*stream << "strlen PROTO C :DWORD\n";
+		*stream << "sprintf PROTO C :DWORD, :DWORD, :VARARG\n";
 
-		*stream << "\n; --- User Lib ---\n";
-		*stream << "str_len PROTO :DWORD\n";
-		*stream << "tostr PROTO :DWORD\n";
+		// Прототипы твоих функций из User Lib (должны быть реализованы где-то или заглушены)
+		// Если они в .lib, то всё ок. Если нет - линкер упадет.
+		// Предполагаем, что они есть (раз ASM собрался).
 		*stream << "touint PROTO :DWORD\n";
-		*stream << "date PROTO\n";
-		*stream << "get_time PROTO\n";
 		*stream << "sub_str PROTO :DWORD, :DWORD, :DWORD\n";
 
 		*stream << "\n.stack 4096\n";
@@ -45,26 +50,39 @@ namespace Gener
 	void Data(std::ofstream* stream, IT::IdTable& id)
 	{
 		*stream << "\n.data\n";
-		*stream << "\tconsole_handle dd 0\n";
-		*stream << "\tnewline db 13, 10, 0\n";
-		*stream << "\tbuffer db 256 dup(0)\n";
+
+		*stream << "\tfmt_num db \"%d\", 0\n";
+		*stream << "\tfmt_num_nl db \"%d\", 10, 0\n";
+		*stream << "\tfmt_str_nl db \"%s\", 10, 0\n";
+		*stream << "\tmsg_start db \"[ASM] Program Started\", 10, 0\n";
+
+		*stream << "\tcommon_buf db 256 dup(0)\n";
+		*stream << "\tdate_buf db \"12.12.2025\", 0\n";
+
+		*stream << "\tret_stack dd 1024 dup(?)\n";
+		*stream << "\tret_ptr dd 0\n";
 
 		for (int i = 0; i < id.size; i++)
 		{
-			if (id.table[i].idtype == IT::F || id.table[i].idtype == IT::P)
-				continue;
+			if (id.table[i].idtype == IT::F) continue;
+
+			std::string name = SafeName(id.table[i].id);
 
 			if (id.table[i].iddatatype == IT::STR)
 			{
 				std::string val = id.table[i].value.vstr.str;
 				std::replace(val.begin(), val.end(), '\"', '\'');
 
-				*stream << "\t" << id.table[i].id << "_s db \"" << val << "\", 0\n";
-				*stream << "\t" << id.table[i].id << " dd " << id.table[i].id << "_s\n";
+				if (val.empty())
+					*stream << "\t" << name << "_s db 0\n";
+				else
+					*stream << "\t" << name << "_s db \"" << val << "\", 0\n";
+
+				*stream << "\t" << name << " dd offset " << name << "_s\n";
 			}
-			else  
+			else
 			{
-				*stream << "\t" << id.table[i].id << " dd " << id.table[i].value.vint << "\n";
+				*stream << "\t" << name << " dd " << id.table[i].value.vint << "\n";
 			}
 		}
 	}
@@ -72,56 +90,8 @@ namespace Gener
 	void Code(std::ofstream* stream, CodeGen::ByteCode& code, IT::IdTable& id)
 	{
 		*stream << "\n.code\n";
-
-		*stream << "\nprint_str PROC uses eax ebx ecx edx, pstr:DWORD\n";
-		*stream << "\tpush -11\n";
-		*stream << "\tcall GetStdHandle\n";
-		*stream << "\tmov console_handle, eax\n";
-		*stream << "\tmov edx, pstr\n";
-		*stream << "\txor ecx, ecx\n";
-		*stream << "calc_len:\n";
-		*stream << "\tcmp byte ptr [edx+ecx], 0\n";
-		*stream << "\tje print_now\n";
-		*stream << "\tinc ecx\n";
-		*stream << "\tjmp calc_len\n";
-		*stream << "print_now:\n";
-		*stream << "\tpush 0\n";
-		*stream << "\tpush 0\n";
-		*stream << "\tpush ecx\n";
-		*stream << "\tpush pstr\n";
-		*stream << "\tpush console_handle\n";
-		*stream << "\tcall WriteConsoleA\n";
-		*stream << "\tret\n";
-		*stream << "print_str ENDP\n";
-
-		*stream << "\noutnum PROC uses eax ebx ecx edx, number:DWORD\n";
-		*stream << "\tmov eax, number\n";
-		*stream << "\tmov ecx, 0\n";
-		*stream << "\tmov ebx, 10\n";          
-		*stream << "div_loop:\n";
-		*stream << "\txor edx, edx\n";
-		*stream << "\tdiv ebx\n";
-		*stream << "\tadd dl, '0'\n";
-		*stream << "\tpush edx\n";
-		*stream << "\tinc ecx\n";
-		*stream << "\ttest eax, eax\n";
-		*stream << "\tjnz div_loop\n";
-		*stream << "print_loop:\n";
-		*stream << "\tpop eax\n";
-		*stream << "\tmov buffer[0], al\n";
-		*stream << "\tpush ecx\n";
-		*stream << "\tinvoke print_str, addr buffer\n";
-		*stream << "\tpop ecx\n";
-		*stream << "\tloop print_loop\n";
-		*stream << "\tret\n";
-		*stream << "outnum ENDP\n";
-
-		*stream << "\nprint_newline PROC\n";
-		*stream << "\tinvoke print_str, addr newline\n";
-		*stream << "\tret\n";
-		*stream << "print_newline ENDP\n";
-
-		*stream << "\nmain PROC\n";
+		*stream << "main PROC\n";
+		*stream << "\tinvoke printf, offset msg_start\n";
 
 		for (size_t i = 0; i < code.size(); i++)
 		{
@@ -133,21 +103,18 @@ namespace Gener
 			case CodeGen::CMD_PUSH:
 			{
 				IT::Entry& e = id.table[instr.target];
-
-				if (e.idtype == IT::L)
-				{
+				if (e.idtype == IT::L) {
 					if (e.iddatatype == IT::INT) {
 						*stream << "push " << e.value.vint << "\n";
 						stack_state.push(ITEM_INT_VAL);
 					}
 					else {
-						*stream << "push " << e.id << "\n";
+						*stream << "push offset " << SafeName(e.id) << "_s\n";
 						stack_state.push(ITEM_STR_VAL);
 					}
 				}
-				else
-				{
-					*stream << "push offset " << e.id << "\n";
+				else {
+					*stream << "push offset " << SafeName(e.id) << "\n";
 					if (e.iddatatype == IT::INT) stack_state.push(ITEM_INT_ADDR);
 					else stack_state.push(ITEM_STR_ADDR);
 				}
@@ -156,7 +123,7 @@ namespace Gener
 
 			case CodeGen::CMD_POP:
 			{
-				if (instr.target == LT_TI_NULLIDX)  
+				if (instr.target == LT_TI_NULLIDX)
 				{
 					StackItemType r_type = stack_state.top(); stack_state.pop();
 					*stream << "pop eax\n";
@@ -164,16 +131,16 @@ namespace Gener
 
 					StackItemType l_type = stack_state.top(); stack_state.pop();
 					*stream << "pop ebx\n";
-					*stream << "mov [ebx], eax\n";    
-					*stream << "push eax\n";
+					*stream << "mov [ebx], eax\n";
 
+					*stream << "push eax\n";
 					if (r_type == ITEM_STR_VAL || r_type == ITEM_STR_ADDR) stack_state.push(ITEM_STR_VAL);
 					else stack_state.push(ITEM_INT_VAL);
 				}
 				else
 				{
 					*stream << "pop eax\n";
-					*stream << "mov " << id.table[instr.target].id << ", eax\n";
+					*stream << "mov " << SafeName(id.table[instr.target].id) << ", eax\n";
 				}
 				break;
 			}
@@ -234,17 +201,14 @@ namespace Gener
 				StackItemType type = stack_state.top(); stack_state.pop();
 				*stream << "pop eax\n";
 
-				if (type == ITEM_STR_VAL || type == ITEM_STR_ADDR)
-				{
+				if (type == ITEM_STR_VAL || type == ITEM_STR_ADDR) {
 					if (type == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
-					*stream << "invoke print_str, eax\n";
+					*stream << "invoke printf, offset fmt_str_nl, eax\n";
 				}
-				else
-				{
+				else {
 					if (type == ITEM_INT_ADDR) *stream << "mov eax, [eax]\n";
-					*stream << "invoke outnum, eax\n";
+					*stream << "invoke printf, offset fmt_num_nl, eax\n";
 				}
-				*stream << "invoke print_newline\n";
 				break;
 			}
 
@@ -263,7 +227,12 @@ namespace Gener
 			}
 
 			case CodeGen::CMD_CALL:
-				*stream << "call M" << instr.target << "\n";
+				*stream << "mov ebx, ret_ptr\n";
+				*stream << "mov dword ptr [ret_stack + ebx*4], offset Ret_M" << i << "\n";
+				*stream << "inc ret_ptr\n";
+				*stream << "jmp M" << instr.target << "\n";
+				*stream << "Ret_M" << i << ":\n";
+				*stream << "push eax\n";
 				stack_state.push(ITEM_INT_VAL);
 				break;
 
@@ -272,55 +241,83 @@ namespace Gener
 				IT::Entry& func = id.table[instr.target];
 				std::string fname = func.id;
 
-				int args_count = 0;
-				if (fname == "time") { fname = "get_time"; args_count = 0; }
-				else if (fname == "date") { args_count = 0; }
-				else if (fname == "length") { fname = "str_len"; args_count = 1; }
-				else if (fname == "tostr") { args_count = 1; }
-				else if (fname == "touint") { args_count = 1; }
-				else if (fname == "substr") { fname = "sub_str"; args_count = 3; }
-
-				if (args_count == 1) {
+				if (fname == "length") {
 					StackItemType t = stack_state.top(); stack_state.pop();
 					*stream << "pop eax\n";
-					if (t == ITEM_INT_ADDR || t == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
-					*stream << "push eax\n";
-				}
-				else if (args_count == 3) {
-					StackItemType t3 = stack_state.top(); stack_state.pop();  
-					StackItemType t2 = stack_state.top(); stack_state.pop();  
-					StackItemType t1 = stack_state.top(); stack_state.pop();  
+					if (t == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
-					*stream << "pop ecx\n";  
+					*stream << "invoke strlen, eax\n";
+					*stream << "push eax\n";
+					stack_state.push(ITEM_INT_VAL);
+				}
+				else if (fname == "tostr") {
+					StackItemType t = stack_state.top(); stack_state.pop();
+					*stream << "pop eax\n";
+					if (t == ITEM_INT_ADDR) *stream << "mov eax, [eax]\n";
+
+					*stream << "invoke sprintf, offset common_buf, offset fmt_num, eax\n";
+					*stream << "push offset common_buf\n";
+					stack_state.push(ITEM_STR_VAL);
+				}
+				else if (fname == "date") {
+					*stream << "push offset date_buf\n";
+					stack_state.push(ITEM_STR_VAL);
+				}
+				// --- ИСПРАВЛЕНИЕ: ДОБАВЛЕН SUBSTR ---
+				else if (fname == "substr") {
+					// Стек: STR, START, LEN (TOP)
+					// Pop Len
+					StackItemType t3 = stack_state.top(); stack_state.pop();
+					*stream << "pop ecx\n";
 					if (t3 == ITEM_INT_ADDR) *stream << "mov ecx, [ecx]\n";
 
-					*stream << "pop ebx\n";  
+					// Pop Start
+					StackItemType t2 = stack_state.top(); stack_state.pop();
+					*stream << "pop ebx\n";
 					if (t2 == ITEM_INT_ADDR) *stream << "mov ebx, [ebx]\n";
 
-					*stream << "pop eax\n";  
+					// Pop Str
+					StackItemType t1 = stack_state.top(); stack_state.pop();
+					*stream << "pop eax\n";
 					if (t1 == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
-					*stream << "push ecx\n";  
-					*stream << "push ebx\n";  
-					*stream << "push eax\n";  
+					// invoke sub_str, str, start, len
+					*stream << "invoke sub_str, eax, ebx, ecx\n";
+					*stream << "push eax\n";
+					stack_state.push(ITEM_STR_VAL);
 				}
+				// --- ИСПРАВЛЕНИЕ: ДОБАВЛЕН TOUINT ---
+				else if (fname == "touint") {
+					StackItemType t = stack_state.top(); stack_state.pop();
+					*stream << "pop eax\n";
+					if (t == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
-				*stream << "call " << fname << "\n";
-				*stream << "push eax\n";
-
-				if (func.iddatatype == IT::STR) stack_state.push(ITEM_STR_VAL);
-				else stack_state.push(ITEM_INT_VAL);
+					*stream << "invoke touint, eax\n";
+					*stream << "push eax\n";
+					stack_state.push(ITEM_INT_VAL);
+				}
+				else {
+					*stream << "push 0\n";
+					stack_state.push(ITEM_INT_VAL);
+				}
 				break;
 			}
 
 			case CodeGen::CMD_RET:
-				*stream << "push 0\ncall ExitProcess\n";
+				*stream << "cmp ret_ptr, 0\n";
+				*stream << "je quit_program\n";
+				*stream << "dec ret_ptr\n";
+				*stream << "mov ebx, ret_ptr\n";
+				*stream << "mov eax, [ret_stack + ebx*4]\n";
+				*stream << "jmp eax\n";
 				break;
 			}
 
 			*stream << "\n";
 		}
 
+		*stream << "quit_program:\n";
+		*stream << "invoke ExitProcess, 0\n";
 		*stream << "main ENDP\n";
 		*stream << "end main\n";
 	}

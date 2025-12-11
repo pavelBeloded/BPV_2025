@@ -3,361 +3,326 @@
 option casemap :none
 
 ; --- Libs ---
-includelib kernel32.lib
-includelib libucrt.lib
+includelib msvcrt.lib
+includelib legacy_stdio_definitions.lib
 
-; --- WinAPI ---
+; --- Externs ---
 ExitProcess PROTO :DWORD
-GetStdHandle PROTO :DWORD
-WriteConsoleA PROTO :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
-
-; --- User Lib ---
-str_len PROTO :DWORD
-tostr PROTO :DWORD
+printf PROTO C :DWORD, :VARARG
+strlen PROTO C :DWORD
+sprintf PROTO C :DWORD, :DWORD, :VARARG
 touint PROTO :DWORD
-date PROTO
-get_time PROTO
 sub_str PROTO :DWORD, :DWORD, :DWORD
 
 .stack 4096
 
 .data
-	console_handle dd 0
-	newline db 13, 10, 0
-	buffer db 256 dup(0)
-	entry$num dd 2020
-	L7 dd 0
-	entry$str_s db "Hello World", 0
-	entry$str dd entry$str_s
-	L9_s db "Hello World", 0
-	L9 dd L9_s
-	entry$temp_s_s db "55", 0
-	entry$temp_s dd entry$temp_s_s
-	entry$temp_n dd 60
-	entry$d_s db "10.12.2025", 0
-	entry$d dd entry$d_s
-	entry$t_s db "19:13:02", 0
-	entry$t dd entry$t_s
-	L14_s db "--- Standard Library Test ---", 0
-	L14 dd L14_s
-	L15 dd 55
-	L16_s db "Date:", 0
-	L16 dd L16_s
-	L17_s db "Time:", 0
-	L17 dd L17_s
-	L18_s db "Length of 'Hello World':", 0
-	L18 dd L18_s
-	L19 dd 6
-	L20 dd 5
-	L21_s db "Substring result:", 0
-	L21 dd L21_s
-	L22 dd 2025
-	L23_s db "Converted number to string:", 0
-	L23 dd L23_s
-	L24_s db "55", 0
-	L24 dd L24_s
-	L25_s db "Converted string '55' + 5 = ", 0
-	L25 dd L25_s
-	L26_s db "--- Logic Test ---", 0
-	L26 dd L26_s
-	L27 dd 2020
-	L28 dd 1
+	fmt_num db "%d", 0
+	fmt_num_nl db "%d", 10, 0
+	fmt_str_nl db "%s", 10, 0
+	msg_start db "[ASM] Program Started", 10, 0
+	common_buf db 256 dup(0)
+	date_buf db "12.12.2025", 0
+	ret_stack dd 1024 dup(?)
+	ret_ptr dd 0
+	calculate_a dd 100
+	calculate_b dd 10
+	calculate_res dd 110
+	L10 dd 2
+	greeting_name_s db 0
+	greeting_name dd offset greeting_name_s
+	greeting_hello_s db 0
+	greeting_hello dd offset greeting_hello_s
+	L14_s db "Hello, ", 0
+	L14 dd offset L14_s
+	entry_x dd 10
+	entry_y dd 10
+	entry_counter dd 110
+	entry_msg_s db "10", 0
+	entry_msg dd offset entry_msg_s
+	entry_dateStr_s db "12.12.2025", 0
+	entry_dateStr dd offset entry_dateStr_s
+	L20 dd 100
+	L21 dd 10
+	entry_fDateNumb_s db "2", 0
+	entry_fDateNumb dd offset entry_fDateNumb_s
+	L23 dd 1
+	entry_numb dd 2
+	L25 dd 15
+	L26_s db "Start Loop:", 0
+	L26 dd offset L26_s
+	entry_temp dd 1
+	L28_s db "End", 0
+	L28 dd offset L28_s
+	L29 dd 0
 
 .code
-
-print_str PROC uses eax ebx ecx edx, pstr:DWORD
-	push -11
-	call GetStdHandle
-	mov console_handle, eax
-	mov edx, pstr
-	xor ecx, ecx
-calc_len:
-	cmp byte ptr [edx+ecx], 0
-	je print_now
-	inc ecx
-	jmp calc_len
-print_now:
-	push 0
-	push 0
-	push ecx
-	push pstr
-	push console_handle
-	call WriteConsoleA
-	ret
-print_str ENDP
-
-outnum PROC uses eax ebx ecx edx, number:DWORD
-	mov eax, number
-	mov ecx, 0
-	mov ebx, 10
-div_loop:
-	xor edx, edx
-	div ebx
-	add dl, '0'
-	push edx
-	inc ecx
-	test eax, eax
-	jnz div_loop
-print_loop:
-	pop eax
-	mov buffer[0], al
-	push ecx
-	invoke print_str, addr buffer
-	pop ecx
-	loop print_loop
-	ret
-outnum ENDP
-
-print_newline PROC
-	invoke print_str, addr newline
-	ret
-print_newline ENDP
-
 main PROC
-M0: jmp M1
+	invoke printf, offset msg_start
+M0: jmp M27
 
-M1: push offset entry$num
+M1: pop eax
+mov calculate_b, eax
 
-M2: push 0
+M2: pop eax
+mov calculate_a, eax
 
-M3: pop eax
-pop ebx
-mov [ebx], eax
-push eax
+M3: push offset calculate_res
 
-M4: push offset entry$str
+M4: push offset calculate_a
 
-M5: push L9
+M5: push offset calculate_b
 
-M6: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M7: push L14
-
-M8: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M9: push 55
-
-M10: pop eax
-invoke outnum, eax
-invoke print_newline
-
-M11: push offset entry$d
-
-M12: call date
-push eax
-
-M13: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M14: push L16
-
-M15: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M16: push offset entry$d
-
-M17: pop eax
-mov eax, [eax]
-invoke print_str, eax
-invoke print_newline
-
-M18: push offset entry$t
-
-M19: call get_time
-push eax
-
-M20: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M21: push L17
-
-M22: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M23: push offset entry$t
-
-M24: pop eax
-mov eax, [eax]
-invoke print_str, eax
-invoke print_newline
-
-M25: push offset entry$temp_n
-
-M26: push offset entry$str
-
-M27: pop eax
-mov eax, [eax]
-push eax
-call str_len
-push eax
-
-M28: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M29: push L18
-
-M30: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M31: push offset entry$temp_n
-
-M32: pop eax
-mov eax, [eax]
-invoke outnum, eax
-invoke print_newline
-
-M33: push offset entry$temp_s
-
-M34: push offset entry$str
-
-M35: push 6
-
-M36: push 5
-
-M37: pop ecx
-pop ebx
-pop eax
-mov eax, [eax]
-push ecx
-push ebx
-push eax
-call sub_str
-push eax
-
-M38: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M39: push L21
-
-M40: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M41: push offset entry$temp_s
-
-M42: pop eax
-mov eax, [eax]
-invoke print_str, eax
-invoke print_newline
-
-M43: push offset entry$num
-
-M44: push 2025
-
-M45: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M46: push offset entry$temp_s
-
-M47: push offset entry$num
-
-M48: pop eax
-mov eax, [eax]
-push eax
-call tostr
-push eax
-
-M49: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M50: push L23
-
-M51: pop eax
-invoke print_str, eax
-invoke print_newline
-
-M52: push offset entry$temp_s
-
-M53: pop eax
-mov eax, [eax]
-invoke print_str, eax
-invoke print_newline
-
-M54: push offset entry$temp_s
-
-M55: push L24
-
-M56: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M57: push offset entry$temp_n
-
-M58: push offset entry$temp_s
-
-M59: pop eax
-mov eax, [eax]
-push eax
-call touint
-push eax
-
-M60: pop eax
-pop ebx
-mov [ebx], eax
-push eax
-
-M61: push offset entry$temp_n
-
-M62: push offset entry$temp_n
-
-M63: push 5
-
-M64: pop ebx
+M6: pop ebx
+mov ebx, [ebx]
 pop eax
 mov eax, [eax]
 add eax, ebx
 push eax
 
-M65: pop eax
+M7: push 2
+
+M8: pop ebx
+pop eax
+imul eax, ebx
+push eax
+
+M9: push 2
+
+M10: pop ebx
+pop eax
+cdq
+idiv ebx
+push eax
+
+M11: pop eax
 pop ebx
 mov [ebx], eax
 push eax
 
-M66: push L25
+M12: push offset calculate_res
 
-M67: pop eax
-invoke print_str, eax
-invoke print_newline
+M13: push offset calculate_res
 
-M68: push offset entry$temp_n
+M14: push offset calculate_a
 
-M69: pop eax
+M15: push 2
+
+M16: pop ebx
+pop eax
 mov eax, [eax]
-invoke outnum, eax
-invoke print_newline
+cdq
+idiv ebx
+mov eax, edx
+push eax
 
-M70: push L26
+M17: pop ebx
+pop eax
+mov eax, [eax]
+add eax, ebx
+push eax
+
+M18: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M19: push offset calculate_res
+
+M20: cmp ret_ptr, 0
+je quit_program
+dec ret_ptr
+mov ebx, ret_ptr
+mov eax, [ret_stack + ebx*4]
+jmp eax
+
+M21: pop eax
+mov greeting_name, eax
+
+M22: push offset greeting_hello
+
+M23: push offset L14_s
+
+M24: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M25: push offset greeting_hello
+
+M26: cmp ret_ptr, 0
+je quit_program
+dec ret_ptr
+mov ebx, ret_ptr
+mov eax, [ret_stack + ebx*4]
+jmp eax
+
+M27: push offset entry_x
+
+M28: push 100
+
+M29: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M30: push offset entry_y
+
+M31: push 10
+
+M32: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M33: push offset entry_counter
+
+M34: push offset entry_x
+
+M35: push offset entry_y
+
+M36: mov ebx, ret_ptr
+mov dword ptr [ret_stack + ebx*4], offset Ret_M36
+inc ret_ptr
+jmp M1
+Ret_M36:
+push eax
+
+M37: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M38: push offset entry_counter
+
+M39: pop eax
+mov eax, [eax]
+invoke printf, offset fmt_num_nl, eax
+
+M40: push offset entry_dateStr
+
+M41: push offset date_buf
+
+M42: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M43: push offset entry_dateStr
+
+M44: pop eax
+mov eax, [eax]
+invoke printf, offset fmt_str_nl, eax
+
+M45: push offset entry_x
+
+M46: push offset entry_dateStr
+
+M47: pop eax
+mov eax, [eax]
+invoke strlen, eax
+push eax
+
+M48: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M49: push offset entry_x
+
+M50: pop eax
+mov eax, [eax]
+invoke printf, offset fmt_num_nl, eax
+
+M51: push offset entry_msg
+
+M52: push offset entry_y
+
+M53: pop eax
+mov eax, [eax]
+invoke sprintf, offset common_buf, offset fmt_num, eax
+push offset common_buf
+
+M54: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M55: push offset entry_msg
+
+M56: pop eax
+mov eax, [eax]
+invoke printf, offset fmt_str_nl, eax
+
+M57: push offset entry_fDateNumb
+
+M58: push offset entry_dateStr
+
+M59: push 1
+
+M60: push 1
+
+M61: pop ecx
+pop ebx
+pop eax
+mov eax, [eax]
+invoke sub_str, eax, ebx, ecx
+push eax
+
+M62: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M63: push offset entry_numb
+
+M64: push offset entry_fDateNumb
+
+M65: pop eax
+mov eax, [eax]
+invoke touint, eax
+push eax
+
+M66: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M67: push offset entry_numb
+
+M68: pop eax
+mov eax, [eax]
+invoke printf, offset fmt_num_nl, eax
+
+M69: push offset entry_x
+
+M70: push 15
 
 M71: pop eax
-invoke print_str, eax
-invoke print_newline
+pop ebx
+mov [ebx], eax
+push eax
 
-M72: push offset entry$num
+M72: push offset entry_y
 
-M73: push 2020
+M73: push 10
 
-M74: pop ebx
+M74: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M75: push offset L26_s
+
+M76: pop eax
+invoke printf, offset fmt_str_nl, eax
+
+M77: push offset entry_x
+
+M78: push offset entry_y
+
+M79: pop ebx
+mov ebx, [ebx]
 pop eax
 mov eax, [eax]
 cmp eax, ebx
@@ -365,40 +330,68 @@ mov eax, 0
 setg al
 push eax
 
-M75: pop eax
+M80: pop eax
 cmp eax, 0
-je M84
+je M94
 
-M76: push offset entry$num
+M81: push offset entry_temp
 
-M77: push offset entry$num
+M82: push offset entry_x
 
-M78: push 1
+M83: push offset entry_y
 
-M79: pop ebx
+M84: pop ebx
+mov ebx, [ebx]
 pop eax
 mov eax, [eax]
 sub eax, ebx
 push eax
 
-M80: pop eax
+M85: pop eax
 pop ebx
 mov [ebx], eax
 push eax
 
-M81: push offset entry$num
+M86: push offset entry_temp
 
-M82: pop eax
+M87: pop eax
 mov eax, [eax]
-invoke outnum, eax
-invoke print_newline
+invoke printf, offset fmt_num_nl, eax
 
-M83: jmp M72
+M88: push offset entry_x
 
-M84: push 0
+M89: push offset entry_x
 
-M85: push 0
-call ExitProcess
+M90: push 1
 
+M91: pop ebx
+pop eax
+mov eax, [eax]
+sub eax, ebx
+push eax
+
+M92: pop eax
+pop ebx
+mov [ebx], eax
+push eax
+
+M93: jmp M77
+
+M94: push offset L28_s
+
+M95: pop eax
+invoke printf, offset fmt_str_nl, eax
+
+M96: push 0
+
+M97: cmp ret_ptr, 0
+je quit_program
+dec ret_ptr
+mov ebx, ret_ptr
+mov eax, [ret_stack + ebx*4]
+jmp eax
+
+quit_program:
+invoke ExitProcess, 0
 main ENDP
 end main
