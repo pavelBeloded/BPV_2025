@@ -23,7 +23,6 @@ entry {
     var uint counter;
     var text msg;
     var text dateStr;
-    
     // 2. »нициализаци€ (дес€тична€ и восьмерична€)
     x = 100;
     y = 012; // 10 в дес€тичной
