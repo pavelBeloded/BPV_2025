@@ -18,12 +18,18 @@ text proc greeting(text name) {
 // --- ТОЧКА ВХОДА ---
 entry {
     // 1. Объявление переменных разных типов
+
+var uint testUint = 2;
+var uint testUintT = 3;	
+var uint testRes = testUint - testUintT;
+echo testRes;
+
+
     var uint x;
     var uint y;
     var uint counter;
     var text msg;
     var text dateStr;
-    
     // 2. Инициализация (десятичная и восьмеричная)
     x = 100;
     y = 012; // 10 в десятичной

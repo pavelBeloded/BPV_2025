@@ -38,9 +38,7 @@ namespace Gener
 		*stream << "strlen PROTO C :DWORD\n";
 		*stream << "sprintf PROTO C :DWORD, :DWORD, :VARARG\n";
 
-		// Ïğîòîòèïû òâîèõ ôóíêöèé èç User Lib (äîëæíû áûòü ğåàëèçîâàíû ãäå-òî èëè çàãëóøåíû)
-		// Åñëè îíè â .lib, òî âñ¸ îê. Åñëè íåò - ëèíêåğ óïàäåò.
-		// Ïğåäïîëàãàåì, ÷òî îíè åñòü (ğàç ASM ñîáğàëñÿ).
+		// Ïğîòîòèïû ôóíêöèé
 		*stream << "touint PROTO :DWORD\n";
 		*stream << "sub_str PROTO :DWORD, :DWORD, :DWORD\n";
 
@@ -51,8 +49,9 @@ namespace Gener
 	{
 		*stream << "\n.data\n";
 
-		*stream << "\tfmt_num db \"%d\", 0\n";
-		*stream << "\tfmt_num_nl db \"%d\", 10, 0\n";
+		// ÈÇÌÅÍÅÍÈÅ 1: Ôîğìàòû âûâîäà çàìåíåíû íà %u (unsigned)
+		*stream << "\tfmt_num db \"%u\", 0\n";
+		*stream << "\tfmt_num_nl db \"%u\", 10, 0\n";
 		*stream << "\tfmt_str_nl db \"%s\", 10, 0\n";
 		*stream << "\tmsg_start db \"[ASM] Program Started\", 10, 0\n";
 
@@ -159,11 +158,27 @@ namespace Gener
 				*stream << "pop eax\n";
 				if (l_type == ITEM_INT_ADDR) *stream << "mov eax, [eax]\n";
 
-				if (instr.op == CodeGen::CMD_ADD) *stream << "add eax, ebx\n";
-				else if (instr.op == CodeGen::CMD_SUB) *stream << "sub eax, ebx\n";
-				else if (instr.op == CodeGen::CMD_MUL) *stream << "imul eax, ebx\n";
-				else if (instr.op == CodeGen::CMD_DIV) { *stream << "cdq\n"; *stream << "idiv ebx\n"; }
-				else if (instr.op == CodeGen::CMD_MOD) { *stream << "cdq\n"; *stream << "idiv ebx\n"; *stream << "mov eax, edx\n"; }
+				if (instr.op == CodeGen::CMD_ADD) {
+					*stream << "add eax, ebx\n";
+				}
+				else if (instr.op == CodeGen::CMD_SUB) {
+					*stream << "sub eax, ebx\n";
+				}
+				// ÈÇÌÅÍÅÍÈÅ 2: Áåççíàêîâîå óìíîæåíèå
+				else if (instr.op == CodeGen::CMD_MUL) {
+					*stream << "mul ebx\n";
+				}
+				// ÈÇÌÅÍÅÍÈÅ 3: Áåççíàêîâîå äåëåíèå (óáğàëè cdq, äîáàâèëè mov edx, 0)
+				else if (instr.op == CodeGen::CMD_DIV) {
+					*stream << "mov edx, 0\n";
+					*stream << "div ebx\n";
+				}
+				// ÈÇÌÅÍÅÍÈÅ 4: Áåççíàêîâûé îñòàòîê
+				else if (instr.op == CodeGen::CMD_MOD) {
+					*stream << "mov edx, 0\n";
+					*stream << "div ebx\n";
+					*stream << "mov eax, edx\n";
+				}
 
 				*stream << "push eax\n";
 				stack_state.push(ITEM_INT_VAL);
@@ -188,8 +203,9 @@ namespace Gener
 
 				if (instr.op == CodeGen::CMD_CMPE) *stream << "sete al\n";
 				else if (instr.op == CodeGen::CMD_CMPNE) *stream << "setne al\n";
-				else if (instr.op == CodeGen::CMD_CMPG) *stream << "setg al\n";
-				else if (instr.op == CodeGen::CMD_CMPL) *stream << "setl al\n";
+				// ÈÇÌÅÍÅÍÈÅ 5: Áåççíàêîâûå óñëîâèÿ (Above/Below âìåñòî Greater/Less)
+				else if (instr.op == CodeGen::CMD_CMPG) *stream << "seta al\n";
+				else if (instr.op == CodeGen::CMD_CMPL) *stream << "setb al\n";
 
 				*stream << "push eax\n";
 				stack_state.push(ITEM_INT_VAL);
@@ -255,6 +271,7 @@ namespace Gener
 					*stream << "pop eax\n";
 					if (t == ITEM_INT_ADDR) *stream << "mov eax, [eax]\n";
 
+					// Èñïîëüçóåì %u (fmt_num)
 					*stream << "invoke sprintf, offset common_buf, offset fmt_num, eax\n";
 					*stream << "push offset common_buf\n";
 					stack_state.push(ITEM_STR_VAL);
@@ -263,30 +280,23 @@ namespace Gener
 					*stream << "push offset date_buf\n";
 					stack_state.push(ITEM_STR_VAL);
 				}
-				// --- ÈÑÏĞÀÂËÅÍÈÅ: ÄÎÁÀÂËÅÍ SUBSTR ---
 				else if (fname == "substr") {
-					// Ñòåê: STR, START, LEN (TOP)
-					// Pop Len
 					StackItemType t3 = stack_state.top(); stack_state.pop();
 					*stream << "pop ecx\n";
 					if (t3 == ITEM_INT_ADDR) *stream << "mov ecx, [ecx]\n";
 
-					// Pop Start
 					StackItemType t2 = stack_state.top(); stack_state.pop();
 					*stream << "pop ebx\n";
 					if (t2 == ITEM_INT_ADDR) *stream << "mov ebx, [ebx]\n";
 
-					// Pop Str
 					StackItemType t1 = stack_state.top(); stack_state.pop();
 					*stream << "pop eax\n";
 					if (t1 == ITEM_STR_ADDR) *stream << "mov eax, [eax]\n";
 
-					// invoke sub_str, str, start, len
 					*stream << "invoke sub_str, eax, ebx, ecx\n";
 					*stream << "push eax\n";
 					stack_state.push(ITEM_STR_VAL);
 				}
-				// --- ÈÑÏĞÀÂËÅÍÈÅ: ÄÎÁÀÂËÅÍ TOUINT ---
 				else if (fname == "touint") {
 					StackItemType t = stack_state.top(); stack_state.pop();
 					*stream << "pop eax\n";

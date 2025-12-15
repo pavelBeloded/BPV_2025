@@ -8,10 +8,11 @@
 #include <vector>
 #include <sstream>
 
+// Внешние функции C++ для эмуляции библиотеки
 extern "C" {
 	int   __stdcall str_len(char* s);
 	char* __stdcall tostr(int n);
-	int   __stdcall touint(char* s);
+	unsigned int __stdcall touint(char* s); // <-- unsigned
 	char* __stdcall date();
 	char* __stdcall get_time();
 	char* __stdcall sub_str(char* s, int start, int len);
@@ -23,7 +24,7 @@ namespace Executor {
 	struct Value {
 		IT::IDDATATYPE type;
 		union {
-			int i_val;
+			unsigned int i_val; // <--- UNSIGNED
 			char s_val[255];
 		};
 		int var_idx = -1;          
@@ -42,7 +43,7 @@ namespace Executor {
 				ss << "{" << IT::GetEntry(idtable, v.var_idx).id << "} ";
 			}
 			else {
-				if (v.type == IT::INT) ss << v.i_val << " ";
+				if (v.type == IT::INT) ss << v.i_val << " "; // Выведет корректное unsigned число
 				else ss << "'" << v.s_val << "' ";
 			}
 		}
@@ -59,49 +60,9 @@ namespace Executor {
 		while (ip < code.size()) {
 			CodeGen::Instruction& instr = code[ip];
 
-			std::stringstream ss;
-			ss << "[IP:" << std::setw(3) << ip << "] ";
-			switch (instr.op) {
-			case CodeGen::CMD_PUSH: ss << "PUSH"; break;
-			case CodeGen::CMD_POP: ss << "POP"; break;
-			case CodeGen::CMD_ADD: ss << "ADD"; break;
-			case CodeGen::CMD_SUB: ss << "SUB"; break;
-			case CodeGen::CMD_MUL: ss << "MUL"; break;
-			case CodeGen::CMD_DIV: ss << "DIV"; break;
-			case CodeGen::CMD_MOD: ss << "MOD"; break;
-			case CodeGen::CMD_CMPE: ss << "CMPE"; break;
-			case CodeGen::CMD_CMPNE: ss << "CMPNE"; break;
-			case CodeGen::CMD_CMPL: ss << "CMPL"; break;
-			case CodeGen::CMD_CMPG: ss << "CMPG"; break;
-			case CodeGen::CMD_CMPLE: ss << "CMPLE"; break;
-			case CodeGen::CMD_CMPGE: ss << "CMPGE"; break;
-			case CodeGen::CMD_CALL: ss << "CALL"; break;
-			case CodeGen::CMD_RET: ss << "RET"; break;
-			case CodeGen::CMD_JMP: ss << "JMP"; break;
-			case CodeGen::CMD_JZ: ss << "JZ"; break;
-			case CodeGen::CMD_PRINT: ss << "PRINT"; break;
-			case CodeGen::CMD_CALL_LIB: ss << "CALL LIB"; break;
-			default: ss << "OP " << instr.op;
-			}
+            // ... (Логирование команд оставляем как было, оно не зависит от типа) ... 
+            // Для краткости я его пропущу, вставь свой старый блок логирования
 
-			if (instr.target != LT_TI_NULLIDX && instr.op != CodeGen::CMD_JMP && instr.op != CodeGen::CMD_JZ && instr.op != CodeGen::CMD_CALL && instr.op != CodeGen::CMD_RET && instr.op != CodeGen::CMD_ADD) {
-				try {
-					if (instr.op == CodeGen::CMD_CALL_LIB) {
-						ss << " " << IT::GetEntry(idtable, (int)instr.target).id;
-					}
-					else if (instr.op == CodeGen::CMD_PUSH || instr.op == CodeGen::CMD_POP) {
-						if ((int)instr.target != -1)
-							ss << " " << IT::GetEntry(idtable, (int)instr.target).id;
-					}
-				}
-				catch (...) {}
-			}
-			else if (instr.op == CodeGen::CMD_JMP || instr.op == CodeGen::CMD_JZ || instr.op == CodeGen::CMD_CALL) {
-				ss << " -> " << instr.target;
-			}
-
-			Log::WriteLine(log, ss.str().c_str(), nullptr);
-			Log::WriteLine(log, DumpStack(stack, idtable).c_str(), nullptr);
 			switch (instr.op) {
 
 			case CodeGen::CMD_PUSH: {
@@ -158,7 +119,7 @@ namespace Executor {
 				Value b = stack.back(); stack.pop_back();
 				Value a = stack.back(); stack.pop_back();
 				Value res; res.type = a.type; res.var_idx = -1;
-				if (a.type == IT::INT) res.i_val = a.i_val + b.i_val;
+				if (a.type == IT::INT) res.i_val = a.i_val + b.i_val; // Unsigned overflow is safe in C++
 				else { strcpy_s(res.s_val, a.s_val); strcat_s(res.s_val, b.s_val); }
 				stack.push_back(res);
 				break;
@@ -166,27 +127,33 @@ namespace Executor {
 
 			case CodeGen::CMD_SUB: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = a.i_val - b.i_val;
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                // Unsigned underflow: 1 - 2 -> 4294967295
+                res.i_val = a.i_val - b.i_val;
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_MUL: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = a.i_val * b.i_val;
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = a.i_val * b.i_val;
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_DIV: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
 				if (b.i_val == 0) throw ERROR_THROW(1);         
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = a.i_val / b.i_val;
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = a.i_val / b.i_val; // Unsigned division
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_MOD: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
 				if (b.i_val == 0) throw ERROR_THROW(1);
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = a.i_val % b.i_val;
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = a.i_val % b.i_val;
 				stack.push_back(res); break;
 			}
 
+            // Сравнения для unsigned работают корректно сами по себе
 			case CodeGen::CMD_CMPE: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
 				Value res; res.type = IT::INT; res.var_idx = -1;
@@ -201,29 +168,33 @@ namespace Executor {
 			}
 			case CodeGen::CMD_CMPL: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = (a.i_val < b.i_val);
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = (a.i_val < b.i_val);
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_CMPG: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = (a.i_val > b.i_val);
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = (a.i_val > b.i_val);
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_CMPLE: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = (a.i_val <= b.i_val);
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = (a.i_val <= b.i_val);
 				stack.push_back(res); break;
 			}
 			case CodeGen::CMD_CMPGE: {
 				Value b = stack.back(); stack.pop_back(); Value a = stack.back(); stack.pop_back();
-				Value res; res.type = IT::INT; res.var_idx = -1; res.i_val = (a.i_val >= b.i_val);
+				Value res; res.type = IT::INT; res.var_idx = -1; 
+                res.i_val = (a.i_val >= b.i_val);
 				stack.push_back(res); break;
 			}
 
 			case CodeGen::CMD_PRINT: {
 				if (stack.empty()) throw ERROR_THROW(701);
 				Value v = stack.back(); stack.pop_back();
-				if (v.type == IT::INT) std::cout << v.i_val << std::endl;
+				if (v.type == IT::INT) std::cout << v.i_val << std::endl; // cout выведет unsigned число
 				else std::cout << v.s_val << std::endl;
 				break;
 			}
